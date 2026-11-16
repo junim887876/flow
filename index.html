@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="FlowNest Orçamentos" />
   <link rel="apple-touch-icon" href="./flow.jpg" />
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
-  <title>FlowNest(IA)</title>
+  <title>Orçamentos Pro • FlowNest(IA)</title>
   <link rel="manifest" href="./manifest.json" />
   <style>
     :root {
@@ -21,6 +21,7 @@
       --accent-soft: rgba(0, 122, 255, 0.12);
       --success: #34c759;
       --danger: #ff3b30;
+      --warning: #f59e0b;
       --text: #1d1d1f;
       --muted: #6e6e73;
       --radius-lg: 24px;
@@ -195,6 +196,76 @@
       align-items: center;
       justify-content: center;
       padding: 0 4px;
+    }
+
+    /* =========================================================
+       BANNER DE ASSINATURA PENDENTE (STATUS = OFF)
+       ========================================================= */
+    .subscription-alert-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255, 59, 48, 0.14) 0%, rgba(245, 158, 11, 0.16) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 59, 48, 0.38);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 25px rgba(255, 59, 48, 0.1);
+    }
+
+    .sub-alert-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .sub-alert-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #b91c1c;
+      margin: 0;
+    }
+
+    .sub-alert-desc {
+      font-size: 0.82rem;
+      color: #374151;
+      line-height: 1.45;
+      margin: 0 0 12px 0;
+    }
+
+    .sub-alert-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-sub-refresh {
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      border-radius: 11px;
+      padding: 9px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-sub-history {
+      background: rgba(255, 255, 255, 0.9);
+      color: #0f172a;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      border-radius: 11px;
+      padding: 9px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .editor-locked-overlay {
+      opacity: 0.55;
+      pointer-events: none;
+      user-select: none;
     }
 
     .container {
@@ -515,11 +586,16 @@
       font-weight: 600;
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
-      transition: transform 0.14s ease;
+      transition: transform 0.14s ease, background 0.2s ease;
     }
 
     .btn-generate-pdf:active {
       transform: scale(0.96);
+    }
+
+    .btn-generate-pdf.btn-locked {
+      background: #94a3b8;
+      box-shadow: none;
     }
 
     /* =========================================================
@@ -840,91 +916,114 @@
     </header>
 
     <div class="container">
-      <!-- Identificação do Orçamento -->
-      <div class="glass-card">
-        <div class="section-label">Identificação do Orçamento</div>
-        <div class="grid-2">
-          <div class="form-group" style="margin-bottom:0;">
-            <label>Número</label>
-            <input type="text" id="orcNumero" />
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>Data de Emissão</label>
-            <input type="date" id="orcData" />
-          </div>
+      <!-- BANNER DE BLOQUEIO QUANDO STATUS ESTIVER "OFF" NA PLANILHA -->
+      <div id="bannerAssinaturaOff" class="subscription-alert-banner">
+        <div class="sub-alert-header">
+          <span style="font-size:1.35rem;">🔒</span>
+          <h3 class="sub-alert-title">Assinatura Mensal Pendente</h3>
+        </div>
+        <p class="sub-alert-desc">
+          Seu acesso completo está temporariamente suspenso por falta de renovação mensal.
+          Enquanto estiver pendente, você pode consultar apenas os seus <strong>5 últimos orçamentos</strong>, mas a criação de novos orçamentos e edições está bloqueada.
+        </p>
+        <div class="sub-alert-actions">
+          <button type="button" id="btnVerificarPagamento" class="btn-sub-refresh" onclick="verificarStatusAssinatura()">
+            🔄 Já paguei • Atualizar Status
+          </button>
+          <button type="button" class="btn-sub-history" onclick="abrirHistorico()">
+            📋 Ver Últimos 5 Orçamentos
+          </button>
         </div>
       </div>
 
-      <!-- Dados do Cliente Orçado -->
-      <div class="glass-card">
-        <div class="section-label">Dados do Cliente (Tomador do Serviço)</div>
-        <div class="form-group">
-          <label>Nome Completo / Razão Social *</label>
-          <input type="text" id="clienteNome" placeholder="Nome de quem vai receber o serviço" />
+      <!-- ÁREA DO EDITOR (TRAVADA SE STATUS = OFF) -->
+      <div id="editorFormWrapper">
+        <!-- Identificação do Orçamento -->
+        <div class="glass-card">
+          <div class="section-label">Identificação do Orçamento</div>
+          <div class="grid-2">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Número</label>
+              <input type="text" id="orcNumero" />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Data de Emissão</label>
+              <input type="date" id="orcData" />
+            </div>
+          </div>
         </div>
-        <div class="grid-2">
+
+        <!-- Dados do Cliente Orçado -->
+        <div class="glass-card">
+          <div class="section-label">Dados do Cliente (Tomador do Serviço)</div>
           <div class="form-group">
-            <label>CPF ou CNPJ do Cliente</label>
-            <input type="text" id="clienteCpf" placeholder="000.000.000-00" />
+            <label>Nome Completo / Razão Social *</label>
+            <input type="text" id="clienteNome" placeholder="Nome de quem vai receber o serviço" />
           </div>
-          <div class="form-group">
-            <label>Telefone / WhatsApp</label>
-            <input type="tel" id="clienteTelefone" placeholder="(00) 00000-0000" />
+          <div class="grid-2">
+            <div class="form-group">
+              <label>CPF ou CNPJ do Cliente</label>
+              <input type="text" id="clienteCpf" placeholder="000.000.000-00" />
+            </div>
+            <div class="form-group">
+              <label>Telefone / WhatsApp</label>
+              <input type="tel" id="clienteTelefone" placeholder="(00) 00000-0000" />
+            </div>
           </div>
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label>Endereço Onde Será Feito o Serviço *</label>
-          <input type="text" id="clienteEndereco" placeholder="Rua, número, bairro, cidade" />
-        </div>
-      </div>
-
-      <!-- Discriminação dos Serviços -->
-      <div class="glass-card">
-        <div class="section-label">Discriminação dos Serviços</div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label>Descrição Geral do Serviço</label>
-          <textarea id="discriminacaoServico" rows="2" placeholder="Ex: Instalação de calhas e rufos..."></textarea>
-        </div>
-      </div>
-
-      <!-- Materiais e Itens -->
-      <div class="glass-card">
-        <div class="section-label">
-          <span>Materiais e Itens</span>
-          <span id="contadorItens" style="color:var(--muted); font-size:0.74rem;">1 item</span>
-        </div>
-
-        <div id="containerItens"></div>
-
-        <button type="button" class="btn-plus-pill" onclick="adicionarItem()">
-          <span style="font-size:1.2rem; line-height:1;">+</span> Adicionar Material / Serviço
-        </button>
-      </div>
-
-      <!-- Pagamento & Observações -->
-      <div class="glass-card">
-        <div class="section-label">Pagamento & Observações</div>
-
-        <div class="form-group">
-          <label>Forma de Pagamento</label>
-          <div class="pix-badge-fixed">
-            <span>💠 Pagamento via PIX</span>
-            <span id="badgeChavePixAtiva" style="font-size:0.74rem; opacity:0.9;">Chave vinculada</span>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Endereço Onde Será Feito o Serviço *</label>
+            <input type="text" id="clienteEndereco" placeholder="Rua, número, bairro, cidade" />
           </div>
         </div>
 
-        <div id="boxBtnObs">
-          <button type="button" class="btn-plus-pill" style="background:rgba(15,23,42,0.05); border-color:rgba(15,23,42,0.2); color:var(--primary);" onclick="mostrarObservacao()">
-            <span style="font-size:1.15rem; line-height:1;">+</span> Adicionar Observação
+        <!-- Discriminação dos Serviços -->
+        <div class="glass-card">
+          <div class="section-label">Discriminação dos Serviços</div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Descrição Geral do Serviço</label>
+            <textarea id="discriminacaoServico" rows="2" placeholder="Ex: Instalação de calhas e rufos..."></textarea>
+          </div>
+        </div>
+
+        <!-- Materiais e Itens -->
+        <div class="glass-card">
+          <div class="section-label">
+            <span>Materiais e Itens</span>
+            <span id="contadorItens" style="color:var(--muted); font-size:0.74rem;">1 item</span>
+          </div>
+
+          <div id="containerItens"></div>
+
+          <button type="button" class="btn-plus-pill" onclick="adicionarItem()">
+            <span style="font-size:1.2rem; line-height:1;">+</span> Adicionar Material / Serviço
           </button>
         </div>
 
-        <div id="boxInputObs" style="display:none; margin-top:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="margin:0;">Observações do Orçamento</label>
-            <button type="button" onclick="ocultarObservacao()" style="background:none; border:none; color:var(--danger); font-size:0.78rem; font-weight:600; cursor:pointer;">Remover</button>
+        <!-- Pagamento & Observações -->
+        <div class="glass-card">
+          <div class="section-label">Pagamento & Observações</div>
+
+          <div class="form-group">
+            <label>Forma de Pagamento</label>
+            <div class="pix-badge-fixed">
+              <span>💠 Pagamento via PIX</span>
+              <span id="badgeChavePixAtiva" style="font-size:0.74rem; opacity:0.9;">Chave vinculada</span>
+            </div>
           </div>
-          <textarea id="observacoesTexto" rows="3" placeholder="Ex: Instalação e vedação incluídas, pagamento após conclusão..."></textarea>
+
+          <div id="boxBtnObs">
+            <button type="button" class="btn-plus-pill" style="background:rgba(15,23,42,0.05); border-color:rgba(15,23,42,0.2); color:var(--primary);" onclick="mostrarObservacao()">
+              <span style="font-size:1.15rem; line-height:1;">+</span> Adicionar Observação
+            </button>
+          </div>
+
+          <div id="boxInputObs" style="display:none; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label style="margin:0;">Observações do Orçamento</label>
+              <button type="button" onclick="ocultarObservacao()" style="background:none; border:none; color:var(--danger); font-size:0.78rem; font-weight:600; cursor:pointer;">Remover</button>
+            </div>
+            <textarea id="observacoesTexto" rows="3" placeholder="Ex: Instalação e vedação incluídas, pagamento após conclusão..."></textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -946,7 +1045,7 @@
        ========================================================= -->
   <div id="previewBar" class="preview-bar">
     <button type="button" class="btn-bar" style="background:rgba(255,255,255,0.18);" onclick="voltarParaEditor()">
-      ← Editar
+      ← Voltar
     </button>
     <button type="button" class="btn-bar" style="background:#34c759;" onclick="window.print()">
       Imprimir / Salvar PDF
@@ -1079,10 +1178,31 @@
         <h3 style="margin:0;">📋 Orçamentos Salvos</h3>
         <button type="button" class="btn-bar" style="background:#94a3b8; padding:6px 12px;" onclick="fecharHistorico()">Fechar</button>
       </div>
-      <p style="margin:0 0 12px 0; font-size:0.78rem; color:var(--muted);">
+      <p id="subtituloModalHistorico" style="margin:0 0 12px 0; font-size:0.78rem; color:var(--muted);">
         Exibindo apenas os orçamentos vinculados à sua conta.
       </p>
       <div id="listaHistorico" style="max-height:65vh; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       7. MODAL DE BLOQUEIO DE ASSINATURA (MENSAGEM DETALHADA)
+       ========================================================= -->
+  <div id="modalAssinaturaBloqueada" class="modal-backdrop">
+    <div class="modal-sheet" style="text-align:center;">
+      <div style="font-size:2.6rem; margin-bottom:8px;">🔒</div>
+      <h3 style="margin:0 0 8px 0; color:#b91c1c;">Assinatura Mensal Não Identificada</h3>
+      <p style="margin:0 0 14px 0; font-size:0.86rem; color:#334155; line-height:1.5;">
+        O status da sua conta consta como <strong>OFF (Pendente)</strong>. Para continuar gerando novos orçamentos, editando ou excluindo registros, efetue o pagamento da sua mensalidade junto ao suporte <strong>FlowNest(IA)</strong>.
+      </p>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; margin-bottom:16px; font-size:0.8rem; color:#475569; text-align:left;">
+        • <strong>O que continua liberado:</strong> Você ainda pode consultar e reimprimir seus <strong>5 últimos orçamentos</strong> no menu 📋.<br/>
+        • <strong>Liberação imediata:</strong> Assim que o pagamento for confirmado, clique em <em>Atualizar Status</em>.
+      </div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button type="button" class="btn-bar" style="background:#94a3b8; flex:1;" onclick="fecharModalBloqueio()">Fechar</button>
+        <button type="button" class="btn-bar" style="background:#007aff; flex:1;" onclick="fecharModalBloqueio(); verificarStatusAssinatura();">Atualizar Status</button>
+      </div>
     </div>
   </div>
 
@@ -1112,10 +1232,15 @@
     let scriptUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
     let currentUser = JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || 'null');
 
-    // Começa com APENAS 1 item totalmente em branco
     let itensOrcamento = [
       { desc: '', qtd: '', un: 'un', unit: '' }
     ];
+
+    function isPlanoAtivo() {
+      if (!currentUser) return false;
+      if (typeof currentUser.planoAtivo === 'boolean') return currentUser.planoAtivo;
+      return String(currentUser.status || '').trim().toUpperCase() === 'ATIVO';
+    }
 
     function getStorageKeyHistoricoUsuario() {
       const nomeKey = (currentUser && currentUser.primeiroNome ? currentUser.primeiroNome : 'default')
@@ -1126,7 +1251,9 @@
 
     function obterOrcamentosLocaisUsuario() {
       try {
-        return JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
+        const todos = JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
+        // Se estiver OFF, limita a visualização local também aos 5 últimos
+        return isPlanoAtivo() ? todos : todos.slice(0, 5);
       } catch (e) {
         return [];
       }
@@ -1146,6 +1273,34 @@
       } else {
         badge.style.display = 'none';
       }
+    }
+
+    function aplicarEstadoAssinaturaUI() {
+      const ativo = isPlanoAtivo();
+      const banner = document.getElementById('bannerAssinaturaOff');
+      const editorWrapper = document.getElementById('editorFormWrapper');
+      const btnGerar = document.getElementById('btnGerarFinal');
+
+      if (ativo) {
+        banner.style.display = 'none';
+        editorWrapper.classList.remove('editor-locked-overlay');
+        btnGerar.classList.remove('btn-locked');
+        btnGerar.innerText = 'Gerar PDF e Salvar';
+      } else {
+        banner.style.display = 'block';
+        editorWrapper.classList.add('editor-locked-overlay');
+        btnGerar.classList.add('btn-locked');
+        btnGerar.innerText = '🔒 Mensalidade Pendente';
+      }
+      atualizarBadgeContador();
+    }
+
+    function abrirModalBloqueio() {
+      document.getElementById('modalAssinaturaBloqueada').style.display = 'flex';
+    }
+
+    function fecharModalBloqueio() {
+      document.getElementById('modalAssinaturaBloqueada').style.display = 'none';
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -1170,6 +1325,10 @@
     }
 
     function novoOrcamentoLimpo() {
+      if (!isPlanoAtivo()) {
+        abrirModalBloqueio();
+        return;
+      }
       if (!confirm('Iniciar um novo orçamento em branco?')) return;
       gerarNumeroOrcamentoPadrao();
       document.getElementById('orcData').valueAsDate = new Date();
@@ -1275,7 +1434,7 @@
     }
 
     // =========================================================
-    // LOGIN POR SENHA + SINCRONIZAÇÃO ISOLADA
+    // LOGIN POR SENHA + SINCRONIZAÇÃO DE STATUS (ATIVO / OFF)
     // =========================================================
     function alternarVisibilidadeSenha() {
       const input = document.getElementById('loginSenhaInput');
@@ -1322,6 +1481,39 @@
       }
     }
 
+    async function verificarStatusAssinatura() {
+      if (!scriptUrl || !currentUser || !currentUser.primeiroNome) return;
+      const btn = document.getElementById('btnVerificarPagamento');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Verificando...';
+      }
+
+      try {
+        const resp = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
+        const data = await resp.json();
+        if (data.status === 'success' && data.user) {
+          currentUser = data.user;
+          localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+          aplicarEstadoAssinaturaUI();
+
+          if (isPlanoAtivo()) {
+            alert('✅ Pagamento confirmado! Seu acesso completo foi liberado.');
+            ativarTelaApp(currentUser);
+          } else {
+            alert('⚠️ O status da sua assinatura ainda consta como OFF na planilha. Caso já tenha pago, aguarde a confirmação.');
+          }
+        }
+      } catch (e) {
+        alert('Não foi possível conectar à planilha no momento.');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = '🔄 Já paguei • Atualizar Status';
+        }
+      }
+    }
+
     async function ativarTelaApp(user) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
@@ -1329,10 +1521,19 @@
       document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${user.responsavel || user.primeiroNome}`;
       document.getElementById('badgeChavePixAtiva').innerText = user.pixChave ? `Chave: ${user.pixChave}` : 'Sem chave PIX na planilha';
       renderizarItens();
-      atualizarBadgeContador();
+      aplicarEstadoAssinaturaUI();
 
+      // Sincroniza em segundo plano o status atual (ATIVO/OFF) e os orçamentos
       if (scriptUrl && user.primeiroNome) {
         try {
+          const respUser = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
+          const dataUser = await respUser.json();
+          if (dataUser.status === 'success' && dataUser.user) {
+            currentUser = dataUser.user;
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+            aplicarEstadoAssinaturaUI();
+          }
+
           const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
           const data = await resp.json();
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
@@ -1353,7 +1554,7 @@
     }
 
     // =========================================================
-    // MATERIAIS E ITENS (1 INICIAL VAZIO, + E LIXEIRA)
+    // MATERIAIS E ITENS
     // =========================================================
     function formatarMoeda(v) {
       return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1418,11 +1619,19 @@
     }
 
     function adicionarItem() {
+      if (!isPlanoAtivo()) {
+        abrirModalBloqueio();
+        return;
+      }
       itensOrcamento.push({ desc: '', qtd: '', un: 'un', unit: '' });
       renderizarItens();
     }
 
     function removerItem(index) {
+      if (!isPlanoAtivo()) {
+        abrirModalBloqueio();
+        return;
+      }
       if (itensOrcamento.length <= 1) return;
       itensOrcamento.splice(index, 1);
       renderizarItens();
@@ -1446,9 +1655,6 @@
       document.getElementById('uiTotalGeral').innerText = formatarMoeda(calcularTotalNumerico());
     }
 
-    // =========================================================
-    // OBSERVAÇÕES OPCIONAIS (+ PARA ADICIONAR)
-    // =========================================================
     function mostrarObservacao() {
       document.getElementById('boxBtnObs').style.display = 'none';
       document.getElementById('boxInputObs').style.display = 'block';
@@ -1462,45 +1668,9 @@
     }
 
     // =========================================================
-    // GERAR ORÇAMENTO PDF + SALVAR NO CACHE DO USUÁRIO E PLANILHA
+    // RENDERIZAÇÃO DO DOCUMENTO (USADO TANTO PARA NOVO QUANTO VISUALIZAÇÃO DOS 5 ÚLTIMOS)
     // =========================================================
-    async function gerarOrcamentoCompleto() {
-      const cliNome = document.getElementById('clienteNome').value.trim();
-      const cliEnd = document.getElementById('clienteEndereco').value.trim();
-
-      if (!cliNome) {
-        alert('Informe o nome do cliente que vai receber o serviço.');
-        document.getElementById('clienteNome').focus();
-        return;
-      }
-
-      const btn = document.getElementById('btnGerarFinal');
-      btn.disabled = true;
-      btn.innerText = 'Salvando...';
-
-      // Sincroniza dados mais recentes da aba Login
-      if (scriptUrl && currentUser && currentUser.primeiroNome) {
-        try {
-          const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
-          const dataSync = await respSync.json();
-          if (dataSync.status === 'success' && dataSync.user) {
-            currentUser = dataSync.user;
-            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-            document.getElementById('badgeChavePixAtiva').innerText = currentUser.pixChave ? `Chave: ${currentUser.pixChave}` : 'Sem chave PIX';
-          }
-        } catch (errSync) {}
-      }
-
-      const numOrc = document.getElementById('orcNumero').value.trim();
-      const dataRaw = document.getElementById('orcData').value;
-      const dataFormatada = dataRaw ? dataRaw.split('-').reverse().join('/') : '';
-      const cliCpf = document.getElementById('clienteCpf').value.trim();
-      const cliTel = document.getElementById('clienteTelefone').value.trim();
-      const discriminacao = document.getElementById('discriminacaoServico').value.trim();
-      const obs = document.getElementById('observacoesTexto').value.trim();
-      const totalNum = calcularTotalNumerico();
-
-      // 1. Cabeçalho da Empresa
+    function preencherDocumentoVisualizacao(dadosOrc) {
       document.getElementById('docEmpresaNome').innerText = currentUser.empresa || currentUser.primeiroNome;
       document.getElementById('docPrestadorNome').innerText = currentUser.responsavel || currentUser.primeiroNome;
       document.getElementById('docEmpresaDoc').innerText = currentUser.doc || 'Não informado';
@@ -1508,20 +1678,18 @@
       document.getElementById('docEmpresaEmail').innerText = currentUser.email || '';
       document.getElementById('docEmpresaCidade').innerText = currentUser.cidade || '';
 
-      document.getElementById('docOrcNumero').innerText = `N° ${numOrc}`;
-      document.getElementById('docOrcData').innerText = dataFormatada;
+      document.getElementById('docOrcNumero').innerText = `N° ${dadosOrc.numeroOrcamento}`;
+      document.getElementById('docOrcData').innerText = dadosOrc.dataEmissao;
 
-      // 2. Dados do Cliente Orçado
-      document.getElementById('docCliNome').innerText = cliNome;
-      document.getElementById('docCliCpf').innerText = cliCpf || 'Não informado';
-      document.getElementById('docCliTel').innerText = cliTel || 'Não informado';
-      document.getElementById('docCliEnd').innerText = cliEnd || 'Não informado';
-      document.getElementById('docDiscriminacao').innerText = discriminacao || 'Execução de serviços conforme itens abaixo:';
+      document.getElementById('docCliNome').innerText = dadosOrc.clienteNome;
+      document.getElementById('docCliCpf').innerText = dadosOrc.clienteCpf || 'Não informado';
+      document.getElementById('docCliTel').innerText = dadosOrc.clienteTelefone || 'Não informado';
+      document.getElementById('docCliEnd').innerText = dadosOrc.clienteEndereco || 'Não informado';
+      document.getElementById('docDiscriminacao').innerText = dadosOrc.discriminacao || 'Execução de serviços conforme itens abaixo:';
 
-      // 3. Tabela de Itens
       const tbody = document.getElementById('docTabelaCorpo');
       tbody.innerHTML = '';
-      itensOrcamento.forEach(it => {
+      (dadosOrc.itens || []).forEach(it => {
         const q = parseFloat(it.qtd) || 0;
         const u = parseFloat(it.unit) || 0;
         const sub = q * u;
@@ -1536,10 +1704,9 @@
         tbody.appendChild(tr);
       });
 
-      const totalStr = formatarMoeda(totalNum);
+      const totalStr = formatarMoeda(dadosOrc.valorTotal);
       document.getElementById('docTotalValor').innerText = totalStr;
 
-      // 4. QR Code PIX + Pague com PIX + Chave PIX (Sem Copia e Cola)
       const chavePixPlanilha = (currentUser.pixChave || '').trim();
       document.getElementById('docPixTotal').innerText = totalStr;
       document.getElementById('docPixChave').innerText = chavePixPlanilha || 'Chave não cadastrada';
@@ -1549,8 +1716,8 @@
           chavePixPlanilha,
           currentUser.empresa || currentUser.primeiroNome,
           currentUser.cidade || 'BRASIL',
-          totalNum,
-          numOrc
+          dadosOrc.valorTotal,
+          dadosOrc.numeroOrcamento
         );
         document.getElementById('docQrImagem').src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=4&data=${encodeURIComponent(payloadPixOficial)}`;
         document.getElementById('docBlocoPix').style.display = 'block';
@@ -1558,21 +1725,74 @@
         document.getElementById('docBlocoPix').style.display = 'none';
       }
 
-      // 5. Observações
-      if (obs) {
+      if (dadosOrc.observacoes) {
         document.getElementById('docBlocoObs').style.display = 'block';
-        document.getElementById('docObsTexto').innerText = obs;
+        document.getElementById('docObsTexto').innerText = dadosOrc.observacoes;
       } else {
         document.getElementById('docBlocoObs').style.display = 'none';
       }
 
-      // 6. Assinaturas Físicas
       document.getElementById('docAssinaturaEmpresa').innerText = currentUser.empresa || currentUser.responsavel;
       document.getElementById('docAssinaturaEmpresaDoc').innerText = currentUser.doc || '';
-      document.getElementById('docAssinaturaCliente').innerText = cliNome;
-      document.getElementById('docAssinaturaClienteDoc').innerText = cliCpf || '_______________________';
+      document.getElementById('docAssinaturaCliente').innerText = dadosOrc.clienteNome;
+      document.getElementById('docAssinaturaClienteDoc').innerText = dadosOrc.clienteCpf || '_______________________';
 
-      // 7. Salvar no cache local exclusivo do usuário
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('previewBar').style.display = 'flex';
+      document.getElementById('printDocument').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    // =========================================================
+    // GERAR ORÇAMENTO PDF + SALVAR (BLOQUEADO SE STATUS = OFF)
+    // =========================================================
+    async function gerarOrcamentoCompleto() {
+      if (!isPlanoAtivo()) {
+        abrirModalBloqueio();
+        return;
+      }
+
+      const cliNome = document.getElementById('clienteNome').value.trim();
+      const cliEnd = document.getElementById('clienteEndereco').value.trim();
+
+      if (!cliNome) {
+        alert('Informe o nome do cliente que vai receber o serviço.');
+        document.getElementById('clienteNome').focus();
+        return;
+      }
+
+      const btn = document.getElementById('btnGerarFinal');
+      btn.disabled = true;
+      btn.innerText = 'Verificando e salvando...';
+
+      // Verifica em tempo real se o status na planilha continua ATIVO
+      if (scriptUrl && currentUser && currentUser.primeiroNome) {
+        try {
+          const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
+          const dataSync = await respSync.json();
+          if (dataSync.status === 'success' && dataSync.user) {
+            currentUser = dataSync.user;
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+            aplicarEstadoAssinaturaUI();
+
+            if (!isPlanoAtivo()) {
+              btn.disabled = false;
+              abrirModalBloqueio();
+              return;
+            }
+          }
+        } catch (errSync) {}
+      }
+
+      const numOrc = document.getElementById('orcNumero').value.trim();
+      const dataRaw = document.getElementById('orcData').value;
+      const dataFormatada = dataRaw ? dataRaw.split('-').reverse().join('/') : '';
+      const cliCpf = document.getElementById('clienteCpf').value.trim();
+      const cliTel = document.getElementById('clienteTelefone').value.trim();
+      const discriminacao = document.getElementById('discriminacaoServico').value.trim();
+      const obs = document.getElementById('observacoesTexto').value.trim();
+      const totalNum = calcularTotalNumerico();
+
       const registroOrcamento = {
         id: 'ID-' + Date.now(),
         numeroOrcamento: numOrc,
@@ -1587,7 +1807,7 @@
         observacoes: obs
       };
 
-      const listaLocal = obterOrcamentosLocaisUsuario();
+      const listaLocal = JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
       const idxExistente = listaLocal.findIndex(o => o.numeroOrcamento === numOrc);
       if (idxExistente >= 0) {
         registroOrcamento.id = listaLocal[idxExistente].id;
@@ -1597,7 +1817,6 @@
       }
       salvarOrcamentosLocaisUsuario(listaLocal);
 
-      // 8. Enviar para a aba exclusiva deste usuário na Planilha Google
       if (scriptUrl) {
         try {
           const respSave = await fetch(scriptUrl, {
@@ -1609,6 +1828,15 @@
             })
           });
           const resData = await respSave.json();
+          if (resData.status === 'blocked') {
+            currentUser.planoAtivo = false;
+            currentUser.status = 'OFF';
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+            aplicarEstadoAssinaturaUI();
+            btn.disabled = false;
+            abrirModalBloqueio();
+            return;
+          }
           if (resData.status === 'success' && resData.id) {
             registroOrcamento.id = resData.id;
             salvarOrcamentosLocaisUsuario(listaLocal);
@@ -1616,13 +1844,10 @@
         } catch (e) {}
       }
 
-      document.getElementById('appScreen').style.display = 'none';
-      document.getElementById('previewBar').style.display = 'flex';
-      document.getElementById('printDocument').style.display = 'block';
-      window.scrollTo(0, 0);
+      preencherDocumentoVisualizacao(registroOrcamento);
 
       btn.disabled = false;
-      btn.innerText = 'Gerar PDF e Salvar';
+      aplicarEstadoAssinaturaUI();
     }
 
     function voltarParaEditor() {
@@ -1632,19 +1857,30 @@
     }
 
     // =========================================================
-    // HISTÓRICO ISOLADO POR USUÁRIO (CACHE LOCAL + PLANILHA)
+    // HISTÓRICO ISOLADO POR USUÁRIO (MÁX. 5 QUANDO STATUS = OFF)
     // =========================================================
     function renderizarListaHistoricoUI(orcamentos) {
       const listaEl = document.getElementById('listaHistorico');
-      if (!orcamentos || orcamentos.length === 0) {
+      const subtituloEl = document.getElementById('subtituloModalHistorico');
+      const ativo = isPlanoAtivo();
+
+      subtituloEl.innerHTML = ativo
+        ? 'Exibindo todos os orçamentos vinculados à sua conta.'
+        : '<span style="color:#b91c1c; font-weight:600;">🔒 Mensalidade pendente:</span> exibindo apenas os seus <strong>5 últimos orçamentos</strong> somente para visualização.';
+
+      const listaExibir = ativo ? orcamentos : (orcamentos || []).slice(0, 5);
+
+      if (!listaExibir || listaExibir.length === 0) {
         listaEl.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Nenhum orçamento salvo ainda para esta conta.</p>';
         return;
       }
 
       listaEl.innerHTML = '';
-      orcamentos.forEach(orc => {
+      listaExibir.forEach(orc => {
         const div = document.createElement('div');
         div.className = 'hist-item';
+        const orcJsonEscapado = JSON.stringify(orc).replace(/'/g, "&apos;");
+
         div.innerHTML = `
           <div style="flex:1; min-width:0;">
             <strong style="font-size:0.9rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -1656,10 +1892,15 @@
             ${orc.clienteEndereco ? `<div style="font-size:0.72rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${orc.clienteEndereco}</div>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button type="button" class="btn-bar" style="background:var(--accent); padding:7px 11px; font-size:0.78rem;"
-              onclick='carregarOrcamentoParaEdicao(${JSON.stringify(orc).replace(/'/g, "&apos;")})'>Abrir</button>
-            <button type="button" class="btn-bar" style="background:var(--danger); padding:7px 10px; font-size:0.78rem;"
-              onclick="excluirOrcamentoCompleto('${orc.id}', '${orc.numeroOrcamento}')">🗑️</button>
+            ${ativo ? `
+              <button type="button" class="btn-bar" style="background:var(--accent); padding:7px 11px; font-size:0.78rem;"
+                onclick='carregarOrcamentoParaEdicao(${orcJsonEscapado})'>Editar</button>
+              <button type="button" class="btn-bar" style="background:var(--danger); padding:7px 10px; font-size:0.78rem;"
+                onclick="excluirOrcamentoCompleto('${orc.id}', '${orc.numeroOrcamento}')">🗑️</button>
+            ` : `
+              <button type="button" class="btn-bar" style="background:#0f172a; padding:7px 12px; font-size:0.78rem;"
+                onclick='visualizarOrcamentoSomenteLeitura(${orcJsonEscapado})'>👁️ Ver PDF</button>
+            `}
           </div>
         `;
         listaEl.appendChild(div);
@@ -1682,6 +1923,12 @@
           const data = await resp.json();
 
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
+            if (typeof data.planoAtivo === 'boolean') {
+              currentUser.planoAtivo = data.planoAtivo;
+              currentUser.status = data.statusPlano || (data.planoAtivo ? 'ATIVO' : 'OFF');
+              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+              aplicarEstadoAssinaturaUI();
+            }
             salvarOrcamentosLocaisUsuario(data.orcamentos);
             renderizarListaHistoricoUI(data.orcamentos);
           }
@@ -1697,7 +1944,18 @@
       document.getElementById('modalHistorico').style.display = 'none';
     }
 
+    function visualizarOrcamentoSomenteLeitura(orc) {
+      fecharHistorico();
+      preencherDocumentoVisualizacao(orc);
+    }
+
     function carregarOrcamentoParaEdicao(orc) {
+      if (!isPlanoAtivo()) {
+        fecharHistorico();
+        abrirModalBloqueio();
+        return;
+      }
+
       document.getElementById('orcNumero').value = orc.numeroOrcamento || '';
       if (orc.dataEmissao && orc.dataEmissao.includes('/')) {
         const [d, m, a] = orc.dataEmissao.split('/');
@@ -1725,9 +1983,14 @@
     }
 
     async function excluirOrcamentoCompleto(idRegistro, numeroOrc) {
+      if (!isPlanoAtivo()) {
+        abrirModalBloqueio();
+        return;
+      }
       if (!confirm('Deseja excluir permanentemente este orçamento?')) return;
 
-      const filtrados = obterOrcamentosLocaisUsuario().filter(o => o.id !== idRegistro && o.numeroOrcamento !== numeroOrc);
+      const todosLocais = JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
+      const filtrados = todosLocais.filter(o => o.id !== idRegistro && o.numeroOrcamento !== numeroOrc);
       salvarOrcamentosLocaisUsuario(filtrados);
       renderizarListaHistoricoUI(filtrados);
 
