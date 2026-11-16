@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="FlowNest Orçamentos" />
   <link rel="apple-touch-icon" href="./flow.jpg" />
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
-  <title>FlowNest(IA) APP</title>
+  <title>FlowNest(IA)</title>
   <link rel="manifest" href="./manifest.json" />
   <style>
     :root {
@@ -233,7 +233,6 @@
       margin-bottom: 6px;
     }
 
-    /* Fonte 16px obrigatória para impedir zoom automático no iPhone/Safari */
     input, textarea, select {
       width: 100%;
       padding: 13px 15px;
@@ -709,32 +708,23 @@
 
     .doc-pix-card {
       display: flex;
-      gap: 16px;
+      gap: 18px;
       align-items: center;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      padding: 12px;
+      padding: 14px;
       background: #fafafa;
     }
 
     .doc-pix-card img {
-      width: 130px;
-      height: 130px;
+      width: 135px;
+      height: 135px;
       object-fit: contain;
       background: #fff;
       border: 1px solid #e2e8f0;
       padding: 4px;
-    }
-
-    .pix-raw-box {
-      background: #f1f5f9;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 10px;
-      word-break: break-all;
-      border: 1px dashed #94a3b8;
-      margin-top: 4px;
+      border-radius: 6px;
+      flex-shrink: 0;
     }
 
     .doc-paper-signatures {
@@ -952,20 +942,15 @@
   </section>
 
   <!-- =========================================================
-       3. BARRA DE AÇÕES DO PDF / IMPRESSÃO
+       3. BARRA DE AÇÕES DO PDF / IMPRESSÃO (SEM PIX COPIA E COLA)
        ========================================================= -->
   <div id="previewBar" class="preview-bar">
     <button type="button" class="btn-bar" style="background:rgba(255,255,255,0.18);" onclick="voltarParaEditor()">
       ← Editar
     </button>
-    <div style="display:flex; gap:8px;">
-      <button type="button" class="btn-bar" style="background:#007aff;" onclick="copiarCodigoPix()">
-        Copiar PIX
-      </button>
-      <button type="button" class="btn-bar" style="background:#34c759;" onclick="window.print()">
-        Imprimir / Salvar PDF
-      </button>
-    </div>
+    <button type="button" class="btn-bar" style="background:#34c759;" onclick="window.print()">
+      Imprimir / Salvar PDF
+    </button>
   </div>
 
   <!-- =========================================================
@@ -1024,18 +1009,16 @@
       </div>
     </div>
 
-    <!-- Bloco PIX -->
+    <!-- Bloco PIX (Somente QR Code + Pague com PIX + Chave PIX) -->
     <div class="doc-block" id="docBlocoPix">
-      <div class="doc-block-title">Pagamento Instantâneo via PIX</div>
+      <div class="doc-block-title">Pagamento via PIX</div>
       <div class="doc-pix-card">
         <div id="docQrWrapper">
           <img id="docQrImagem" src="" alt="QR Code PIX" />
         </div>
-        <div style="flex:1;">
-          <p style="margin:0 0 4px 0; font-weight:700;">Pague com PIX: <span id="docPixTotal"></span></p>
-          <p style="margin:0 0 4px 0; font-size:12px;">Chave PIX: <strong id="docPixChave"></strong></p>
-          <span style="font-size:11px; color:#475569;">PIX Copia e Cola (com valor exato):</span>
-          <div class="pix-raw-box" id="docPixCopiaTexto"></div>
+        <div style="flex:1; font-size:14px; line-height:1.7;">
+          <p style="margin:0; font-weight:700; color:#0f172a;">Pague com PIX: <span id="docPixTotal"></span></p>
+          <p style="margin:0; font-weight:600; color:#1e293b;">Chave PIX: <span id="docPixChave"></span></p>
         </div>
       </div>
     </div>
@@ -1128,7 +1111,6 @@
 
     let scriptUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
     let currentUser = JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || 'null');
-    let ultimoPixCopiaColaGerado = '';
 
     // Começa com APENAS 1 item totalmente em branco
     let itensOrcamento = [
@@ -1202,7 +1184,7 @@
     }
 
     // =========================================================
-    // GERADOR OFICIAL DE PAYLOAD PIX (BR CODE EMV + CRC16)
+    // GERADOR OFICIAL DE PAYLOAD PIX PARA O QR CODE (EMV + CRC16)
     // =========================================================
     function formatarCampoEMV(id, valor) {
       const len = String(valor.length).padStart(2, '0');
@@ -1349,7 +1331,6 @@
       renderizarItens();
       atualizarBadgeContador();
 
-      // Sincroniza em segundo plano os orçamentos exclusivos deste usuário
       if (scriptUrl && user.primeiroNome) {
         try {
           const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
@@ -1558,10 +1539,10 @@
       const totalStr = formatarMoeda(totalNum);
       document.getElementById('docTotalValor').innerText = totalStr;
 
-      // 4. Converte a Chave PIX em QR Code oficial com valor
+      // 4. QR Code PIX + Pague com PIX + Chave PIX (Sem Copia e Cola)
       const chavePixPlanilha = (currentUser.pixChave || '').trim();
       document.getElementById('docPixTotal').innerText = totalStr;
-      document.getElementById('docPixChave').innerText = chavePixPlanilha || 'Chave não cadastrada na aba Login';
+      document.getElementById('docPixChave').innerText = chavePixPlanilha || 'Chave não cadastrada';
 
       if (chavePixPlanilha) {
         const payloadPixOficial = gerarPayloadPixBRCode(
@@ -1571,12 +1552,9 @@
           totalNum,
           numOrc
         );
-        ultimoPixCopiaColaGerado = payloadPixOficial;
-        document.getElementById('docPixCopiaTexto').innerText = payloadPixOficial;
-        document.getElementById('docQrImagem').src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=4&data=${encodeURIComponent(payloadPixOficial)}`;
+        document.getElementById('docQrImagem').src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=4&data=${encodeURIComponent(payloadPixOficial)}`;
         document.getElementById('docBlocoPix').style.display = 'block';
       } else {
-        ultimoPixCopiaColaGerado = '';
         document.getElementById('docBlocoPix').style.display = 'none';
       }
 
@@ -1594,7 +1572,7 @@
       document.getElementById('docAssinaturaCliente').innerText = cliNome;
       document.getElementById('docAssinaturaClienteDoc').innerText = cliCpf || '_______________________';
 
-      // 7. Monta objeto do orçamento e salva no cache local exclusivo do usuário
+      // 7. Salvar no cache local exclusivo do usuário
       const registroOrcamento = {
         id: 'ID-' + Date.now(),
         numeroOrcamento: numOrc,
@@ -1619,7 +1597,7 @@
       }
       salvarOrcamentosLocaisUsuario(listaLocal);
 
-      // 8. Envia para a aba exclusiva deste usuário na Planilha Google
+      // 8. Enviar para a aba exclusiva deste usuário na Planilha Google
       if (scriptUrl) {
         try {
           const respSave = await fetch(scriptUrl, {
@@ -1651,17 +1629,6 @@
       document.getElementById('printDocument').style.display = 'none';
       document.getElementById('previewBar').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
-    }
-
-    function copiarCodigoPix() {
-      const code = ultimoPixCopiaColaGerado || currentUser.pixChave || '';
-      if (!code) {
-        alert('Nenhuma chave PIX cadastrada.');
-        return;
-      }
-      navigator.clipboard.writeText(code).then(() => {
-        alert('Código PIX Copia e Cola copiado!');
-      });
     }
 
     // =========================================================
