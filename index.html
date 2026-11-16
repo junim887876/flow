@@ -198,76 +198,6 @@
       padding: 0 4px;
     }
 
-    /* =========================================================
-       BANNER DE ASSINATURA PENDENTE (STATUS = OFF)
-       ========================================================= */
-    .subscription-alert-banner {
-      display: none;
-      background: linear-gradient(135deg, rgba(255, 59, 48, 0.14) 0%, rgba(245, 158, 11, 0.16) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 59, 48, 0.38);
-      border-radius: 20px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 10px 25px rgba(255, 59, 48, 0.1);
-    }
-
-    .sub-alert-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 6px;
-    }
-
-    .sub-alert-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #b91c1c;
-      margin: 0;
-    }
-
-    .sub-alert-desc {
-      font-size: 0.82rem;
-      color: #374151;
-      line-height: 1.45;
-      margin: 0 0 12px 0;
-    }
-
-    .sub-alert-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .btn-sub-refresh {
-      background: #0f172a;
-      color: #fff;
-      border: none;
-      border-radius: 11px;
-      padding: 9px 14px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-sub-history {
-      background: rgba(255, 255, 255, 0.9);
-      color: #0f172a;
-      border: 1px solid rgba(15, 23, 42, 0.15);
-      border-radius: 11px;
-      padding: 9px 14px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .editor-locked-overlay {
-      opacity: 0.55;
-      pointer-events: none;
-      user-select: none;
-    }
-
     .container {
       max-width: 680px;
       margin: 0 auto;
@@ -323,7 +253,7 @@
     }
 
     /* =========================================================
-       TELA DE LOGIN REFINADA (APPLE GLASS + LOGO.JPG + SENHA)
+       TELA DE LOGIN + BLOQUEIO DE MENSALIDADE
        ========================================================= */
     #loginScreen {
       min-height: 100vh;
@@ -391,9 +321,54 @@
     }
 
     .login-subtitle {
-      margin: 0 0 26px 0;
+      margin: 0 0 22px 0;
       font-size: 0.86rem;
       color: var(--muted);
+    }
+
+    /* CARD VERMELHO DE BLOQUEIO POR MENSALIDADE NA TELA DE LOGIN */
+    .login-lock-card {
+      display: none;
+      text-align: left;
+      background: linear-gradient(135deg, rgba(255, 59, 48, 0.14) 0%, rgba(220, 38, 38, 0.1) 100%);
+      border: 1.5px solid rgba(255, 59, 48, 0.45);
+      border-radius: 18px;
+      padding: 14px 15px;
+      margin-bottom: 18px;
+      animation: loginAppear 0.25s ease;
+    }
+
+    .login-lock-card-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #b91c1c;
+      margin-bottom: 6px;
+    }
+
+    .login-lock-card p {
+      margin: 0 0 10px 0;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #374151;
+    }
+
+    .btn-recheck-login {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: none;
+      background: #b91c1c;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-recheck-login:active {
+      transform: scale(0.98);
     }
 
     .password-field-wrap {
@@ -591,11 +566,6 @@
 
     .btn-generate-pdf:active {
       transform: scale(0.96);
-    }
-
-    .btn-generate-pdf.btn-locked {
-      background: #94a3b8;
-      box-shadow: none;
     }
 
     /* =========================================================
@@ -851,7 +821,7 @@
   <div class="bg-orb-3"></div>
 
   <!-- =========================================================
-       1. TELA DE LOGIN REFINADA (LOGO.JPG + CAMPO SENHA)
+       1. TELA DE LOGIN (TRAVADA QUANDO STATUS = OFF)
        ========================================================= -->
   <section id="loginScreen">
     <button type="button" class="btn-glass-icon login-gear" onclick="abrirModalScript()" title="Configurações">
@@ -865,6 +835,20 @@
 
       <h2 class="login-title">Bem-vindo</h2>
       <p class="login-subtitle">Insira sua senha para acessar o painel</p>
+
+      <!-- ALERTA DE BLOQUEIO POR MENSALIDADE NÃO PAGA (STATUS = OFF) -->
+      <div id="loginBloqueioAlert" class="login-lock-card">
+        <div class="login-lock-card-head">
+          <span>🔒</span>
+          <span>Acesso Bloqueado • Mensalidade Pendente</span>
+        </div>
+        <p id="loginBloqueioTexto">
+          Sua conta está com status <strong>OFF</strong> por falta de pagamento da mensalidade. Regularize sua assinatura junto ao suporte <strong>FlowNest(IA)</strong> para liberar o acesso.
+        </p>
+        <button type="button" id="btnRevalidarLogin" class="btn-recheck-login" onclick="realizarLogin()">
+          🔄 Já paguei • Verificar novamente
+        </button>
+      </div>
 
       <div class="form-group" style="text-align:left; margin-bottom:18px;">
         <label for="loginSenhaInput">Senha</label>
@@ -893,7 +877,7 @@
   </section>
 
   <!-- =========================================================
-       2. APLICATIVO PRINCIPAL (GERADOR DE ORÇAMENTOS)
+       2. APLICATIVO PRINCIPAL (SÓ ABRE SE STATUS = ATIVO)
        ========================================================= -->
   <section id="appScreen" style="display:none;">
     <header class="glass-header">
@@ -916,27 +900,6 @@
     </header>
 
     <div class="container">
-      <!-- BANNER DE BLOQUEIO QUANDO STATUS ESTIVER "OFF" NA PLANILHA -->
-      <div id="bannerAssinaturaOff" class="subscription-alert-banner">
-        <div class="sub-alert-header">
-          <span style="font-size:1.35rem;">🔒</span>
-          <h3 class="sub-alert-title">Assinatura Mensal Pendente</h3>
-        </div>
-        <p class="sub-alert-desc">
-          Seu acesso completo está temporariamente suspenso por falta de renovação mensal.
-          Enquanto estiver pendente, você pode consultar apenas os seus <strong>5 últimos orçamentos</strong>, mas a criação de novos orçamentos e edições está bloqueada.
-        </p>
-        <div class="sub-alert-actions">
-          <button type="button" id="btnVerificarPagamento" class="btn-sub-refresh" onclick="verificarStatusAssinatura()">
-            🔄 Já paguei • Atualizar Status
-          </button>
-          <button type="button" class="btn-sub-history" onclick="abrirHistorico()">
-            📋 Ver Últimos 5 Orçamentos
-          </button>
-        </div>
-      </div>
-
-      <!-- ÁREA DO EDITOR (TRAVADA SE STATUS = OFF) -->
       <div id="editorFormWrapper">
         <!-- Identificação do Orçamento -->
         <div class="glass-card">
@@ -1041,7 +1004,7 @@
   </section>
 
   <!-- =========================================================
-       3. BARRA DE AÇÕES DO PDF / IMPRESSÃO (SEM PIX COPIA E COLA)
+       3. BARRA DE AÇÕES DO PDF / IMPRESSÃO
        ========================================================= -->
   <div id="previewBar" class="preview-bar">
     <button type="button" class="btn-bar" style="background:rgba(255,255,255,0.18);" onclick="voltarParaEditor()">
@@ -1108,7 +1071,7 @@
       </div>
     </div>
 
-    <!-- Bloco PIX (Somente QR Code + Pague com PIX + Chave PIX) -->
+    <!-- Bloco PIX -->
     <div class="doc-block" id="docBlocoPix">
       <div class="doc-block-title">Pagamento via PIX</div>
       <div class="doc-pix-card">
@@ -1178,31 +1141,10 @@
         <h3 style="margin:0;">📋 Orçamentos Salvos</h3>
         <button type="button" class="btn-bar" style="background:#94a3b8; padding:6px 12px;" onclick="fecharHistorico()">Fechar</button>
       </div>
-      <p id="subtituloModalHistorico" style="margin:0 0 12px 0; font-size:0.78rem; color:var(--muted);">
+      <p style="margin:0 0 12px 0; font-size:0.78rem; color:var(--muted);">
         Exibindo apenas os orçamentos vinculados à sua conta.
       </p>
       <div id="listaHistorico" style="max-height:65vh; overflow-y:auto;"></div>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       7. MODAL DE BLOQUEIO DE ASSINATURA (MENSAGEM DETALHADA)
-       ========================================================= -->
-  <div id="modalAssinaturaBloqueada" class="modal-backdrop">
-    <div class="modal-sheet" style="text-align:center;">
-      <div style="font-size:2.6rem; margin-bottom:8px;">🔒</div>
-      <h3 style="margin:0 0 8px 0; color:#b91c1c;">Assinatura Mensal Não Identificada</h3>
-      <p style="margin:0 0 14px 0; font-size:0.86rem; color:#334155; line-height:1.5;">
-        O status da sua conta consta como <strong>OFF (Pendente)</strong>. Para continuar gerando novos orçamentos, editando ou excluindo registros, efetue o pagamento da sua mensalidade junto ao suporte <strong>FlowNest(IA)</strong>.
-      </p>
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; margin-bottom:16px; font-size:0.8rem; color:#475569; text-align:left;">
-        • <strong>O que continua liberado:</strong> Você ainda pode consultar e reimprimir seus <strong>5 últimos orçamentos</strong> no menu 📋.<br/>
-        • <strong>Liberação imediata:</strong> Assim que o pagamento for confirmado, clique em <em>Atualizar Status</em>.
-      </div>
-      <div style="display:flex; gap:10px; justify-content:center;">
-        <button type="button" class="btn-bar" style="background:#94a3b8; flex:1;" onclick="fecharModalBloqueio()">Fechar</button>
-        <button type="button" class="btn-bar" style="background:#007aff; flex:1;" onclick="fecharModalBloqueio(); verificarStatusAssinatura();">Atualizar Status</button>
-      </div>
     </div>
   </div>
 
@@ -1224,7 +1166,7 @@
     }, { passive: false });
 
     // =========================================================
-    // ESTADO GLOBAL E LOCALSTORAGE ISOLADO POR USUÁRIO
+    // ESTADO GLOBAL E VERIFICAÇÃO ESTRITA DE ASSINATURA (ATIVO / OFF)
     // =========================================================
     const STORAGE_KEY_URL = 'flownest_apps_script_url';
     const STORAGE_KEY_USER = 'flownest_logged_user';
@@ -1236,10 +1178,51 @@
       { desc: '', qtd: '', un: 'un', unit: '' }
     ];
 
-    function isPlanoAtivo() {
-      if (!currentUser) return false;
-      if (typeof currentUser.planoAtivo === 'boolean') return currentUser.planoAtivo;
-      return String(currentUser.status || '').trim().toUpperCase() === 'ATIVO';
+    /**
+     * Retorna TRUE somente se a conta estiver explicitamente ATIVA.
+     * Se status for OFF (ou qualquer valor diferente de ATIVO), retorna FALSE.
+     */
+    function verificarUsuarioAtivo(user) {
+      if (!user) return false;
+      const statusLimpo = String(user.status || '').trim().toUpperCase();
+
+      if (statusLimpo === 'OFF' || statusLimpo === 'INATIVO' || statusLimpo === 'BLOQUEADO' || statusLimpo === 'PENDENTE') {
+        return false;
+      }
+      if (statusLimpo === 'ATIVO') {
+        return true;
+      }
+      if (typeof user.planoAtivo === 'boolean') {
+        return user.planoAtivo;
+      }
+      return false;
+    }
+
+    /**
+     * Expulsa do app imediatamente, limpa a sessão salva e trava na tela de login
+     * com o aviso de mensalidade não paga.
+     */
+    function travarNoLoginPorFaltaDePagamento(nomeConta) {
+      localStorage.removeItem(STORAGE_KEY_USER);
+      currentUser = null;
+
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('printDocument').style.display = 'none';
+      document.getElementById('previewBar').style.display = 'none';
+      document.getElementById('modalHistorico').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+
+      const alertBox = document.getElementById('loginBloqueioAlert');
+      const alertTexto = document.getElementById('loginBloqueioTexto');
+      const msgEl = document.getElementById('loginStatusMsg');
+
+      if (msgEl) msgEl.innerText = '';
+      if (nomeConta) {
+        alertTexto.innerHTML = `A conta <strong>${nomeConta}</strong> está bloqueada por <strong>falta de pagamento da mensalidade</strong> (status OFF). Regularize sua assinatura com o <strong>FlowNest(IA)</strong> para acessar o app.`;
+      } else {
+        alertTexto.innerHTML = `Seu acesso está bloqueado por <strong>falta de pagamento da mensalidade</strong> (status OFF). Regularize sua assinatura com o <strong>FlowNest(IA)</strong> para acessar o app.`;
+      }
+      alertBox.style.display = 'block';
     }
 
     function getStorageKeyHistoricoUsuario() {
@@ -1251,9 +1234,7 @@
 
     function obterOrcamentosLocaisUsuario() {
       try {
-        const todos = JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
-        // Se estiver OFF, limita a visualização local também aos 5 últimos
-        return isPlanoAtivo() ? todos : todos.slice(0, 5);
+        return JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
       } catch (e) {
         return [];
       }
@@ -1275,40 +1256,50 @@
       }
     }
 
-    function aplicarEstadoAssinaturaUI() {
-      const ativo = isPlanoAtivo();
-      const banner = document.getElementById('bannerAssinaturaOff');
-      const editorWrapper = document.getElementById('editorFormWrapper');
-      const btnGerar = document.getElementById('btnGerarFinal');
-
-      if (ativo) {
-        banner.style.display = 'none';
-        editorWrapper.classList.remove('editor-locked-overlay');
-        btnGerar.classList.remove('btn-locked');
-        btnGerar.innerText = 'Gerar PDF e Salvar';
-      } else {
-        banner.style.display = 'block';
-        editorWrapper.classList.add('editor-locked-overlay');
-        btnGerar.classList.add('btn-locked');
-        btnGerar.innerText = '🔒 Mensalidade Pendente';
-      }
-      atualizarBadgeContador();
-    }
-
-    function abrirModalBloqueio() {
-      document.getElementById('modalAssinaturaBloqueada').style.display = 'flex';
-    }
-
-    function fecharModalBloqueio() {
-      document.getElementById('modalAssinaturaBloqueada').style.display = 'none';
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('orcData').valueAsDate = new Date();
       gerarNumeroOrcamentoPadrao();
 
       if (currentUser && currentUser.primeiroNome) {
-        ativarTelaApp(currentUser);
+        // 1. Se no próprio cache já não estiver ATIVO, trava no login na hora
+        if (!verificarUsuarioAtivo(currentUser)) {
+          travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+          return;
+        }
+
+        // 2. Se houver URL configurada, valida na planilha ANTES de abrir o app
+        if (scriptUrl) {
+          document.getElementById('loginScreen').style.display = 'flex';
+          document.getElementById('loginStatusMsg').style.color = 'var(--muted)';
+          document.getElementById('loginStatusMsg').innerText = 'Verificando assinatura...';
+
+          try {
+            const resp = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
+            const data = await resp.json();
+
+            document.getElementById('loginStatusMsg').style.color = 'var(--danger)';
+            document.getElementById('loginStatusMsg').innerText = '';
+
+            if (data.status === 'success' && data.user) {
+              if (!verificarUsuarioAtivo(data.user)) {
+                travarNoLoginPorFaltaDePagamento(data.user.empresa || data.user.primeiroNome);
+                return;
+              }
+              currentUser = data.user;
+              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+              ativarTelaApp(currentUser);
+            } else {
+              travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+            }
+          } catch (err) {
+            // Sem internet: permite apenas se o último estado válido salvo era ATIVO
+            document.getElementById('loginStatusMsg').style.color = 'var(--danger)';
+            document.getElementById('loginStatusMsg').innerText = '';
+            ativarTelaApp(currentUser);
+          }
+        } else {
+          ativarTelaApp(currentUser);
+        }
       } else {
         document.getElementById('loginScreen').style.display = 'flex';
       }
@@ -1325,8 +1316,8 @@
     }
 
     function novoOrcamentoLimpo() {
-      if (!isPlanoAtivo()) {
-        abrirModalBloqueio();
+      if (!verificarUsuarioAtivo(currentUser)) {
+        travarNoLoginPorFaltaDePagamento();
         return;
       }
       if (!confirm('Iniciar um novo orçamento em branco?')) return;
@@ -1434,7 +1425,7 @@
     }
 
     // =========================================================
-    // LOGIN POR SENHA + SINCRONIZAÇÃO DE STATUS (ATIVO / OFF)
+    // LOGIN POR SENHA COM BLOQUEIO TOTAL SE STATUS = OFF
     // =========================================================
     function alternarVisibilidadeSenha() {
       const input = document.getElementById('loginSenhaInput');
@@ -1444,8 +1435,11 @@
     async function realizarLogin() {
       const senhaInput = document.getElementById('loginSenhaInput').value.trim();
       const msgEl = document.getElementById('loginStatusMsg');
+      const alertBox = document.getElementById('loginBloqueioAlert');
       const btn = document.getElementById('btnEntrar');
+      const btnRecheck = document.getElementById('btnRevalidarLogin');
 
+      msgEl.style.color = 'var(--danger)';
       msgEl.innerText = '';
 
       if (!scriptUrl) {
@@ -1459,7 +1453,11 @@
       }
 
       btn.disabled = true;
-      btn.innerText = 'Entrando...';
+      btn.innerText = 'Verificando...';
+      if (btnRecheck) {
+        btnRecheck.disabled = true;
+        btnRecheck.innerText = 'Consultando planilha...';
+      }
 
       try {
         const urlRequisicao = `${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(senhaInput)}`;
@@ -1467,10 +1465,18 @@
         const data = await resp.json();
 
         if (data.status === 'success' && data.user) {
+          // TRAVA AQUI: Se status for OFF, NÃO abre o app e exibe aviso de mensalidade
+          if (!verificarUsuarioAtivo(data.user)) {
+            travarNoLoginPorFaltaDePagamento(data.user.empresa || data.user.primeiroNome);
+            return;
+          }
+
+          alertBox.style.display = 'none';
           currentUser = data.user;
           localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
           ativarTelaApp(currentUser);
         } else {
+          alertBox.style.display = 'none';
           msgEl.innerText = 'Senha incorreta ou acesso não autorizado.';
         }
       } catch (err) {
@@ -1478,62 +1484,30 @@
       } finally {
         btn.disabled = false;
         btn.innerText = 'Entrar';
-      }
-    }
-
-    async function verificarStatusAssinatura() {
-      if (!scriptUrl || !currentUser || !currentUser.primeiroNome) return;
-      const btn = document.getElementById('btnVerificarPagamento');
-      if (btn) {
-        btn.disabled = true;
-        btn.innerText = 'Verificando...';
-      }
-
-      try {
-        const resp = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
-        const data = await resp.json();
-        if (data.status === 'success' && data.user) {
-          currentUser = data.user;
-          localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-          aplicarEstadoAssinaturaUI();
-
-          if (isPlanoAtivo()) {
-            alert('✅ Pagamento confirmado! Seu acesso completo foi liberado.');
-            ativarTelaApp(currentUser);
-          } else {
-            alert('⚠️ O status da sua assinatura ainda consta como OFF na planilha. Caso já tenha pago, aguarde a confirmação.');
-          }
-        }
-      } catch (e) {
-        alert('Não foi possível conectar à planilha no momento.');
-      } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerText = '🔄 Já paguei • Atualizar Status';
+        if (btnRecheck) {
+          btnRecheck.disabled = false;
+          btnRecheck.innerText = '🔄 Já paguei • Verificar novamente';
         }
       }
     }
 
     async function ativarTelaApp(user) {
+      if (!verificarUsuarioAtivo(user)) {
+        travarNoLoginPorFaltaDePagamento(user ? (user.empresa || user.primeiroNome) : '');
+        return;
+      }
+
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
       document.getElementById('uiEmpresaNome').innerText = user.empresa || user.primeiroNome;
       document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${user.responsavel || user.primeiroNome}`;
       document.getElementById('badgeChavePixAtiva').innerText = user.pixChave ? `Chave: ${user.pixChave}` : 'Sem chave PIX na planilha';
       renderizarItens();
-      aplicarEstadoAssinaturaUI();
+      atualizarBadgeContador();
 
-      // Sincroniza em segundo plano o status atual (ATIVO/OFF) e os orçamentos
+      // Sincroniza orçamentos em segundo plano
       if (scriptUrl && user.primeiroNome) {
         try {
-          const respUser = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
-          const dataUser = await respUser.json();
-          if (dataUser.status === 'success' && dataUser.user) {
-            currentUser = dataUser.user;
-            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-            aplicarEstadoAssinaturaUI();
-          }
-
           const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
           const data = await resp.json();
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
@@ -1548,6 +1522,7 @@
         localStorage.removeItem(STORAGE_KEY_USER);
         currentUser = null;
         document.getElementById('appScreen').style.display = 'none';
+        document.getElementById('loginBloqueioAlert').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('loginSenhaInput').value = '';
       }
@@ -1558,6 +1533,10 @@
     // =========================================================
     function formatarMoeda(v) {
       return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function escaparAspasHtml(str) {
+      return String(str || '').replace(/"/g, '&quot;');
     }
 
     function renderizarItens() {
@@ -1573,7 +1552,7 @@
           <div class="item-top-row">
             <div style="flex:1;">
               <label>Descrição do Material ou Serviço</label>
-              <input type="text" value="${item.desc}" placeholder="Ex: Calha corte 33 galvanizada"
+              <input type="text" value="${escaparAspasHtml(item.desc)}" placeholder="Ex: Calha corte 33 galvanizada"
                 oninput="atualizarCampoItem(${idx}, 'desc', this.value)" />
             </div>
             ${itensOrcamento.length > 1 ? `
@@ -1619,19 +1598,11 @@
     }
 
     function adicionarItem() {
-      if (!isPlanoAtivo()) {
-        abrirModalBloqueio();
-        return;
-      }
       itensOrcamento.push({ desc: '', qtd: '', un: 'un', unit: '' });
       renderizarItens();
     }
 
     function removerItem(index) {
-      if (!isPlanoAtivo()) {
-        abrirModalBloqueio();
-        return;
-      }
       if (itensOrcamento.length <= 1) return;
       itensOrcamento.splice(index, 1);
       renderizarItens();
@@ -1668,7 +1639,7 @@
     }
 
     // =========================================================
-    // RENDERIZAÇÃO DO DOCUMENTO (USADO TANTO PARA NOVO QUANTO VISUALIZAÇÃO DOS 5 ÚLTIMOS)
+    // RENDERIZAÇÃO DO DOCUMENTO PDF
     // =========================================================
     function preencherDocumentoVisualizacao(dadosOrc) {
       document.getElementById('docEmpresaNome').innerText = currentUser.empresa || currentUser.primeiroNome;
@@ -1744,11 +1715,11 @@
     }
 
     // =========================================================
-    // GERAR ORÇAMENTO PDF + SALVAR (BLOQUEADO SE STATUS = OFF)
+    // GERAR ORÇAMENTO PDF + SALVAR (REVALIDA STATUS ANTES DE GERAR)
     // =========================================================
     async function gerarOrcamentoCompleto() {
-      if (!isPlanoAtivo()) {
-        abrirModalBloqueio();
+      if (!verificarUsuarioAtivo(currentUser)) {
+        travarNoLoginPorFaltaDePagamento();
         return;
       }
 
@@ -1765,21 +1736,20 @@
       btn.disabled = true;
       btn.innerText = 'Verificando e salvando...';
 
-      // Verifica em tempo real se o status na planilha continua ATIVO
+      // Revalida em tempo real na planilha antes de gerar/salvar qualquer arquivo
       if (scriptUrl && currentUser && currentUser.primeiroNome) {
         try {
           const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
           const dataSync = await respSync.json();
           if (dataSync.status === 'success' && dataSync.user) {
-            currentUser = dataSync.user;
-            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-            aplicarEstadoAssinaturaUI();
-
-            if (!isPlanoAtivo()) {
+            if (!verificarUsuarioAtivo(dataSync.user)) {
               btn.disabled = false;
-              abrirModalBloqueio();
+              btn.innerText = 'Gerar PDF e Salvar';
+              travarNoLoginPorFaltaDePagamento(dataSync.user.empresa || dataSync.user.primeiroNome);
               return;
             }
+            currentUser = dataSync.user;
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
           }
         } catch (errSync) {}
       }
@@ -1807,7 +1777,7 @@
         observacoes: obs
       };
 
-      const listaLocal = JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
+      const listaLocal = obterOrcamentosLocaisUsuario();
       const idxExistente = listaLocal.findIndex(o => o.numeroOrcamento === numOrc);
       if (idxExistente >= 0) {
         registroOrcamento.id = listaLocal[idxExistente].id;
@@ -1829,12 +1799,9 @@
           });
           const resData = await respSave.json();
           if (resData.status === 'blocked') {
-            currentUser.planoAtivo = false;
-            currentUser.status = 'OFF';
-            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-            aplicarEstadoAssinaturaUI();
             btn.disabled = false;
-            abrirModalBloqueio();
+            btn.innerText = 'Gerar PDF e Salvar';
+            travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
             return;
           }
           if (resData.status === 'success' && resData.id) {
@@ -1847,7 +1814,7 @@
       preencherDocumentoVisualizacao(registroOrcamento);
 
       btn.disabled = false;
-      aplicarEstadoAssinaturaUI();
+      btn.innerText = 'Gerar PDF e Salvar';
     }
 
     function voltarParaEditor() {
@@ -1857,26 +1824,18 @@
     }
 
     // =========================================================
-    // HISTÓRICO ISOLADO POR USUÁRIO (MÁX. 5 QUANDO STATUS = OFF)
+    // HISTÓRICO ISOLADO POR USUÁRIO
     // =========================================================
     function renderizarListaHistoricoUI(orcamentos) {
       const listaEl = document.getElementById('listaHistorico');
-      const subtituloEl = document.getElementById('subtituloModalHistorico');
-      const ativo = isPlanoAtivo();
 
-      subtituloEl.innerHTML = ativo
-        ? 'Exibindo todos os orçamentos vinculados à sua conta.'
-        : '<span style="color:#b91c1c; font-weight:600;">🔒 Mensalidade pendente:</span> exibindo apenas os seus <strong>5 últimos orçamentos</strong> somente para visualização.';
-
-      const listaExibir = ativo ? orcamentos : (orcamentos || []).slice(0, 5);
-
-      if (!listaExibir || listaExibir.length === 0) {
+      if (!orcamentos || orcamentos.length === 0) {
         listaEl.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Nenhum orçamento salvo ainda para esta conta.</p>';
         return;
       }
 
       listaEl.innerHTML = '';
-      listaExibir.forEach(orc => {
+      orcamentos.forEach(orc => {
         const div = document.createElement('div');
         div.className = 'hist-item';
         const orcJsonEscapado = JSON.stringify(orc).replace(/'/g, "&apos;");
@@ -1892,15 +1851,10 @@
             ${orc.clienteEndereco ? `<div style="font-size:0.72rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${orc.clienteEndereco}</div>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
-            ${ativo ? `
-              <button type="button" class="btn-bar" style="background:var(--accent); padding:7px 11px; font-size:0.78rem;"
-                onclick='carregarOrcamentoParaEdicao(${orcJsonEscapado})'>Editar</button>
-              <button type="button" class="btn-bar" style="background:var(--danger); padding:7px 10px; font-size:0.78rem;"
-                onclick="excluirOrcamentoCompleto('${orc.id}', '${orc.numeroOrcamento}')">🗑️</button>
-            ` : `
-              <button type="button" class="btn-bar" style="background:#0f172a; padding:7px 12px; font-size:0.78rem;"
-                onclick='visualizarOrcamentoSomenteLeitura(${orcJsonEscapado})'>👁️ Ver PDF</button>
-            `}
+            <button type="button" class="btn-bar" style="background:var(--accent); padding:7px 11px; font-size:0.78rem;"
+              onclick='carregarOrcamentoParaEdicao(${orcJsonEscapado})'>Editar</button>
+            <button type="button" class="btn-bar" style="background:var(--danger); padding:7px 10px; font-size:0.78rem;"
+              onclick="excluirOrcamentoCompleto('${orc.id}', '${orc.numeroOrcamento}')">🗑️</button>
           </div>
         `;
         listaEl.appendChild(div);
@@ -1908,6 +1862,11 @@
     }
 
     async function abrirHistorico() {
+      if (!verificarUsuarioAtivo(currentUser)) {
+        travarNoLoginPorFaltaDePagamento();
+        return;
+      }
+
       document.getElementById('modalHistorico').style.display = 'flex';
 
       const cacheLocal = obterOrcamentosLocaisUsuario();
@@ -1923,11 +1882,10 @@
           const data = await resp.json();
 
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
-            if (typeof data.planoAtivo === 'boolean') {
-              currentUser.planoAtivo = data.planoAtivo;
-              currentUser.status = data.statusPlano || (data.planoAtivo ? 'ATIVO' : 'OFF');
-              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-              aplicarEstadoAssinaturaUI();
+            const statusResp = String(data.statusPlano || '').trim().toUpperCase();
+            if (statusResp === 'OFF' || data.planoAtivo === false) {
+              travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+              return;
             }
             salvarOrcamentosLocaisUsuario(data.orcamentos);
             renderizarListaHistoricoUI(data.orcamentos);
@@ -1944,15 +1902,9 @@
       document.getElementById('modalHistorico').style.display = 'none';
     }
 
-    function visualizarOrcamentoSomenteLeitura(orc) {
-      fecharHistorico();
-      preencherDocumentoVisualizacao(orc);
-    }
-
     function carregarOrcamentoParaEdicao(orc) {
-      if (!isPlanoAtivo()) {
-        fecharHistorico();
-        abrirModalBloqueio();
+      if (!verificarUsuarioAtivo(currentUser)) {
+        travarNoLoginPorFaltaDePagamento();
         return;
       }
 
@@ -1975,7 +1927,7 @@
       }
 
       itensOrcamento = (orc.itens && orc.itens.length > 0)
-        ? orc.itens
+        ? JSON.parse(JSON.stringify(orc.itens))
         : [{ desc: '', qtd: '', un: 'un', unit: '' }];
 
       renderizarItens();
@@ -1983,13 +1935,13 @@
     }
 
     async function excluirOrcamentoCompleto(idRegistro, numeroOrc) {
-      if (!isPlanoAtivo()) {
-        abrirModalBloqueio();
+      if (!verificarUsuarioAtivo(currentUser)) {
+        travarNoLoginPorFaltaDePagamento();
         return;
       }
       if (!confirm('Deseja excluir permanentemente este orçamento?')) return;
 
-      const todosLocais = JSON.parse(localStorage.getItem(getStorageKeyHistoricoUsuario()) || '[]');
+      const todosLocais = obterOrcamentosLocaisUsuario();
       const filtrados = todosLocais.filter(o => o.id !== idRegistro && o.numeroOrcamento !== numeroOrc);
       salvarOrcamentosLocaisUsuario(filtrados);
       renderizarListaHistoricoUI(filtrados);
