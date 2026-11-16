@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="FlowNest Orçamentos" />
   <link rel="apple-touch-icon" href="./flow.jpg" />
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
-  <title>Orçamentos Pro • FlowNest(IA)</title>
+  <title>FlowNest(IA)</title>
   <link rel="manifest" href="./manifest.json" />
   <style>
     :root {
@@ -326,7 +326,6 @@
       color: var(--muted);
     }
 
-    /* CARD VERMELHO DE BLOQUEIO POR MENSALIDADE NA TELA DE LOGIN */
     .login-lock-card {
       display: none;
       text-align: left;
@@ -884,7 +883,7 @@
       <div class="header-left">
         <img src="./logo.jpg" alt="Logo Empresa" class="company-logo-header" onerror="this.style.display='none'" />
         <div class="header-brand">
-          <h1 id="uiEmpresaNome">Empresa</h1>
+          <h1 id="uiEmpresaNome">Painel</h1>
           <small id="uiPrestadorInfo">FlowNest(IA)</small>
         </div>
       </div>
@@ -1166,7 +1165,7 @@
     }, { passive: false });
 
     // =========================================================
-    // ESTADO GLOBAL E VERIFICAÇÃO ESTRITA DE ASSINATURA (ATIVO / OFF)
+    // NORMALIZAÇÃO E SANITIZAÇÃO DOS DADOS VINDOS DA PLANILHA
     // =========================================================
     const STORAGE_KEY_URL = 'flownest_apps_script_url';
     const STORAGE_KEY_USER = 'flownest_logged_user';
@@ -1178,10 +1177,147 @@
       { desc: '', qtd: '', un: 'un', unit: '' }
     ];
 
+    function isTelefone(val) {
+      const s = String(val || '').trim();
+      if (!s || s.includes('@') || /[a-zA-ZÀ-ÿ]/.test(s)) return false;
+      const digits = s.replace(/\D/g, '');
+      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false; // CPF
+      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false; // CNPJ
+      if (digits.length === 14) return false; // CNPJ puro
+      if (/^\(?\d{2}\)?\s?9?\d{4}-?\d{4}$/.test(s)) return true;
+      if (digits.length >= 10 && digits.length <= 13 && !s.includes('.')) return true;
+      return false;
+    }
+
+    function isTextoNomeValido(val) {
+      const s = String(val || '').trim();
+      if (!s || s.length < 2) return false;
+      if (isTelefone(s)) return false;
+      if (s.includes('@') || s.startsWith('http')) return false;
+      if (/^\d+$/.test(s)) return false; // Apenas números (ex: senha numérica)
+      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false; // CPF
+      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false; // CNPJ
+      const upper = s.toUpperCase();
+      if (['ATIVO', 'OFF', 'INATIVO', 'PENDENTE', 'BLOQUEADO', 'SIM', 'NAO', 'NÃO', 'TRUE', 'FALSE'].includes(upper)) {
+        return false;
+      }
+      return true;
+    }
+
+    function buscarCampoPorChaves(obj, listaChaves) {
+      if (!obj || typeof obj !== 'object') return '';
+      const mapa = {};
+      Object.keys(obj).forEach(k => {
+        const norm = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        mapa[norm] = obj[k];
+      });
+      for (const chave of listaChaves) {
+        const normChave = chave.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        if (mapa[normChave] !== undefined && mapa[normChave] !== null && String(mapa[normChave]).trim() !== '') {
+          return String(mapa[normChave]).trim();
+        }
+      }
+      return '';
+    }
+
     /**
-     * Retorna TRUE somente se a conta estiver explicitamente ATIVA.
-     * Se status for OFF (ou qualquer valor diferente de ATIVO), retorna FALSE.
+     * Garante que telefone nunca apareça no lugar do nome ("Leo") ou empresa,
+     * mesmo que as colunas da planilha estejam deslocadas.
      */
+    function normalizarDadosUsuario(rawUser, senhaDigitada) {
+      if (!rawUser || typeof rawUser !== 'object') return null;
+
+      // 1. Guarda o identificador exato usado pelo Apps Script para buscar/salvar orçamentos
+      const idUsuarioScript = String(
+        rawUser.idUsuarioScript ||
+        rawUser.primeiroNome ||
+        senhaDigitada ||
+        ''
+      ).trim();
+
+      // 2. Descobre o telefone real (mesmo que tenha vindo deslocado em "empresa")
+      let telefoneLimpo = buscarCampoPorChaves(rawUser, ['telefoneLimpo', 'telefone', 'celular', 'whatsapp', 'fone', 'tel', 'contato']);
+      if (!telefoneLimpo) {
+        const empresaBruta = buscarCampoPorChaves(rawUser, ['empresa', 'nomeEmpresa']);
+        if (isTelefone(empresaBruta)) {
+          telefoneLimpo = empresaBruta;
+        }
+      }
+
+      // 3. Descobre o nome da pessoa (ex: "Leo"), ignorando telefones e senhas numéricas
+      let nomeExibicao = '';
+      const candidatosNome = [
+        buscarCampoPorChaves(rawUser, ['nomeExibicao']),
+        buscarCampoPorChaves(rawUser, ['nome', 'nomeCompleto']),
+        buscarCampoPorChaves(rawUser, ['responsavel', 'prestador']),
+        buscarCampoPorChaves(rawUser, ['primeiroNome', 'usuario', 'titular'])
+      ];
+      for (const cand of candidatosNome) {
+        if (isTextoNomeValido(cand)) {
+          nomeExibicao = cand;
+          break;
+        }
+      }
+
+      // Se a senha digitada tem letras (ex: "Leo") e nenhum campo tinha nome válido, usa ela
+      if (!nomeExibicao && isTextoNomeValido(senhaDigitada)) {
+        nomeExibicao = String(senhaDigitada).trim();
+      }
+
+      // Fallback final: procura qualquer campo textual válido no objeto que não seja cidade/chave/status
+      if (!nomeExibicao) {
+        const chavesIgnorar = new Set(['status', 'planoativo', 'pixchave', 'chavepix', 'pix', 'cidade', 'email', 'doc', 'cpf', 'cnpj', 'telefone', 'telefonelimpo', 'senha']);
+        for (const k of Object.keys(rawUser)) {
+          const kNorm = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+          if (chavesIgnorar.has(kNorm)) continue;
+          const v = String(rawUser[k] || '').trim();
+          if (isTextoNomeValido(v)) {
+            nomeExibicao = v;
+            break;
+          }
+        }
+      }
+
+      // 4. Descobre o nome da empresa apenas se NÃO for um número de telefone
+      let empresaValida = '';
+      const candidatosEmpresa = [
+        buscarCampoPorChaves(rawUser, ['empresaValida']),
+        buscarCampoPorChaves(rawUser, ['empresa', 'nomeEmpresa', 'razaoSocial', 'nomeFantasia', 'fantasia'])
+      ];
+      for (const candEmp of candidatosEmpresa) {
+        if (isTextoNomeValido(candEmp)) {
+          empresaValida = candEmp;
+          break;
+        }
+      }
+
+      const docLimpo = buscarCampoPorChaves(rawUser, ['doc', 'cpf', 'cnpj', 'documento']);
+      const emailLimpo = buscarCampoPorChaves(rawUser, ['email', 'e-mail']);
+      const cidadeLimpa = buscarCampoPorChaves(rawUser, ['cidade', 'municipio', 'localidade']);
+      const pixLimpo = buscarCampoPorChaves(rawUser, ['pixChave', 'chavePix', 'pix']);
+      const statusLimpo = buscarCampoPorChaves(rawUser, ['status', 'situacao']);
+
+      return {
+        ...rawUser,
+        idUsuarioScript: idUsuarioScript,
+        primeiroNome: idUsuarioScript || nomeExibicao,
+        nomeExibicao: nomeExibicao || 'Usuário',
+        empresaValida: empresaValida,
+        empresa: empresaValida || nomeExibicao || 'Usuário',
+        responsavel: nomeExibicao || empresaValida || 'Usuário',
+        telefoneLimpo: telefoneLimpo,
+        telefone: telefoneLimpo,
+        doc: docLimpo,
+        email: emailLimpo,
+        cidade: cidadeLimpa,
+        pixChave: pixLimpo,
+        status: statusLimpo || rawUser.status || ''
+      };
+    }
+
+    // =========================================================
+    // VERIFICAÇÃO ESTRITA DE ASSINATURA (ATIVO / OFF)
+    // =========================================================
     function verificarUsuarioAtivo(user) {
       if (!user) return false;
       const statusLimpo = String(user.status || '').trim().toUpperCase();
@@ -1198,10 +1334,6 @@
       return false;
     }
 
-    /**
-     * Expulsa do app imediatamente, limpa a sessão salva e trava na tela de login
-     * com o aviso de mensalidade não paga.
-     */
     function travarNoLoginPorFaltaDePagamento(nomeConta) {
       localStorage.removeItem(STORAGE_KEY_USER);
       currentUser = null;
@@ -1217,7 +1349,7 @@
       const msgEl = document.getElementById('loginStatusMsg');
 
       if (msgEl) msgEl.innerText = '';
-      if (nomeConta) {
+      if (nomeConta && isTextoNomeValido(nomeConta)) {
         alertTexto.innerHTML = `A conta <strong>${nomeConta}</strong> está bloqueada por <strong>falta de pagamento da mensalidade</strong> (status OFF). Regularize sua assinatura com o <strong>FlowNest(IA)</strong> para acessar o app.`;
       } else {
         alertTexto.innerHTML = `Seu acesso está bloqueado por <strong>falta de pagamento da mensalidade</strong> (status OFF). Regularize sua assinatura com o <strong>FlowNest(IA)</strong> para acessar o app.`;
@@ -1226,10 +1358,10 @@
     }
 
     function getStorageKeyHistoricoUsuario() {
-      const nomeKey = (currentUser && currentUser.primeiroNome ? currentUser.primeiroNome : 'default')
-        .trim()
-        .toLowerCase();
-      return `flownest_orcamentos_user_${nomeKey}`;
+      const chaveBase = (currentUser && (currentUser.idUsuarioScript || currentUser.primeiroNome))
+        ? (currentUser.idUsuarioScript || currentUser.primeiroNome)
+        : 'default';
+      return `flownest_orcamentos_user_${String(chaveBase).trim().toLowerCase()}`;
     }
 
     function obterOrcamentosLocaisUsuario() {
@@ -1260,39 +1392,42 @@
       document.getElementById('orcData').valueAsDate = new Date();
       gerarNumeroOrcamentoPadrao();
 
-      if (currentUser && currentUser.primeiroNome) {
-        // 1. Se no próprio cache já não estiver ATIVO, trava no login na hora
+      if (currentUser) {
+        currentUser = normalizarDadosUsuario(currentUser);
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+      }
+
+      if (currentUser && currentUser.idUsuarioScript) {
         if (!verificarUsuarioAtivo(currentUser)) {
-          travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+          travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
           return;
         }
 
-        // 2. Se houver URL configurada, valida na planilha ANTES de abrir o app
         if (scriptUrl) {
           document.getElementById('loginScreen').style.display = 'flex';
           document.getElementById('loginStatusMsg').style.color = 'var(--muted)';
           document.getElementById('loginStatusMsg').innerText = 'Verificando assinatura...';
 
           try {
-            const resp = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
+            const resp = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`);
             const data = await resp.json();
 
             document.getElementById('loginStatusMsg').style.color = 'var(--danger)';
             document.getElementById('loginStatusMsg').innerText = '';
 
             if (data.status === 'success' && data.user) {
-              if (!verificarUsuarioAtivo(data.user)) {
-                travarNoLoginPorFaltaDePagamento(data.user.empresa || data.user.primeiroNome);
+              const userAtualizado = normalizarDadosUsuario(data.user, currentUser.idUsuarioScript);
+              if (!verificarUsuarioAtivo(userAtualizado)) {
+                travarNoLoginPorFaltaDePagamento(userAtualizado.nomeExibicao);
                 return;
               }
-              currentUser = data.user;
+              currentUser = userAtualizado;
               localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
               ativarTelaApp(currentUser);
             } else {
-              travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+              travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
             }
           } catch (err) {
-            // Sem internet: permite apenas se o último estado válido salvo era ATIVO
             document.getElementById('loginStatusMsg').style.color = 'var(--danger)';
             document.getElementById('loginStatusMsg').innerText = '';
             ativarTelaApp(currentUser);
@@ -1465,14 +1600,15 @@
         const data = await resp.json();
 
         if (data.status === 'success' && data.user) {
-          // TRAVA AQUI: Se status for OFF, NÃO abre o app e exibe aviso de mensalidade
-          if (!verificarUsuarioAtivo(data.user)) {
-            travarNoLoginPorFaltaDePagamento(data.user.empresa || data.user.primeiroNome);
+          const userNormalizado = normalizarDadosUsuario(data.user, senhaInput);
+
+          if (!verificarUsuarioAtivo(userNormalizado)) {
+            travarNoLoginPorFaltaDePagamento(userNormalizado.nomeExibicao);
             return;
           }
 
           alertBox.style.display = 'none';
-          currentUser = data.user;
+          currentUser = userNormalizado;
           localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
           ativarTelaApp(currentUser);
         } else {
@@ -1492,23 +1628,33 @@
     }
 
     async function ativarTelaApp(user) {
-      if (!verificarUsuarioAtivo(user)) {
-        travarNoLoginPorFaltaDePagamento(user ? (user.empresa || user.primeiroNome) : '');
+      const u = normalizarDadosUsuario(user);
+      if (!verificarUsuarioAtivo(u)) {
+        travarNoLoginPorFaltaDePagamento(u ? u.nomeExibicao : '');
         return;
       }
+      currentUser = u;
 
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
-      document.getElementById('uiEmpresaNome').innerText = user.empresa || user.primeiroNome;
-      document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${user.responsavel || user.primeiroNome}`;
-      document.getElementById('badgeChavePixAtiva').innerText = user.pixChave ? `Chave: ${user.pixChave}` : 'Sem chave PIX na planilha';
+
+      // Canto superior esquerdo: prioriza empresa válida ou o nome real ("Leo"), jamais o telefone
+      const tituloCantoSuperior = u.empresaValida || u.nomeExibicao || 'Painel';
+      document.getElementById('uiEmpresaNome').innerText = tituloCantoSuperior;
+
+      if (u.empresaValida && u.nomeExibicao && u.empresaValida.toLowerCase() !== u.nomeExibicao.toLowerCase()) {
+        document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${u.nomeExibicao}`;
+      } else {
+        document.getElementById('uiPrestadorInfo').innerText = 'FlowNest(IA)';
+      }
+
+      document.getElementById('badgeChavePixAtiva').innerText = u.pixChave ? `Chave: ${u.pixChave}` : 'Sem chave PIX na planilha';
       renderizarItens();
       atualizarBadgeContador();
 
-      // Sincroniza orçamentos em segundo plano
-      if (scriptUrl && user.primeiroNome) {
+      if (scriptUrl && u.idUsuarioScript) {
         try {
-          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
+          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}`);
           const data = await resp.json();
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
             salvarOrcamentosLocaisUsuario(data.orcamentos);
@@ -1642,10 +1788,13 @@
     // RENDERIZAÇÃO DO DOCUMENTO PDF
     // =========================================================
     function preencherDocumentoVisualizacao(dadosOrc) {
-      document.getElementById('docEmpresaNome').innerText = currentUser.empresa || currentUser.primeiroNome;
-      document.getElementById('docPrestadorNome').innerText = currentUser.responsavel || currentUser.primeiroNome;
+      const nomeEmpresaDoc = currentUser.empresaValida || currentUser.nomeExibicao || 'Empresa';
+      const nomeResponsavelDoc = currentUser.nomeExibicao || nomeEmpresaDoc;
+
+      document.getElementById('docEmpresaNome').innerText = nomeEmpresaDoc;
+      document.getElementById('docPrestadorNome').innerText = nomeResponsavelDoc;
       document.getElementById('docEmpresaDoc').innerText = currentUser.doc || 'Não informado';
-      document.getElementById('docEmpresaTel').innerText = currentUser.telefone || '';
+      document.getElementById('docEmpresaTel').innerText = currentUser.telefoneLimpo || '';
       document.getElementById('docEmpresaEmail').innerText = currentUser.email || '';
       document.getElementById('docEmpresaCidade').innerText = currentUser.cidade || '';
 
@@ -1685,7 +1834,7 @@
       if (chavePixPlanilha) {
         const payloadPixOficial = gerarPayloadPixBRCode(
           chavePixPlanilha,
-          currentUser.empresa || currentUser.primeiroNome,
+          nomeEmpresaDoc,
           currentUser.cidade || 'BRASIL',
           dadosOrc.valorTotal,
           dadosOrc.numeroOrcamento
@@ -1703,7 +1852,7 @@
         document.getElementById('docBlocoObs').style.display = 'none';
       }
 
-      document.getElementById('docAssinaturaEmpresa').innerText = currentUser.empresa || currentUser.responsavel;
+      document.getElementById('docAssinaturaEmpresa').innerText = nomeEmpresaDoc;
       document.getElementById('docAssinaturaEmpresaDoc').innerText = currentUser.doc || '';
       document.getElementById('docAssinaturaCliente').innerText = dadosOrc.clienteNome;
       document.getElementById('docAssinaturaClienteDoc').innerText = dadosOrc.clienteCpf || '_______________________';
@@ -1736,19 +1885,19 @@
       btn.disabled = true;
       btn.innerText = 'Verificando e salvando...';
 
-      // Revalida em tempo real na planilha antes de gerar/salvar qualquer arquivo
-      if (scriptUrl && currentUser && currentUser.primeiroNome) {
+      if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
         try {
-          const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
+          const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`);
           const dataSync = await respSync.json();
           if (dataSync.status === 'success' && dataSync.user) {
-            if (!verificarUsuarioAtivo(dataSync.user)) {
+            const userAtualizado = normalizarDadosUsuario(dataSync.user, currentUser.idUsuarioScript);
+            if (!verificarUsuarioAtivo(userAtualizado)) {
               btn.disabled = false;
               btn.innerText = 'Gerar PDF e Salvar';
-              travarNoLoginPorFaltaDePagamento(dataSync.user.empresa || dataSync.user.primeiroNome);
+              travarNoLoginPorFaltaDePagamento(userAtualizado.nomeExibicao);
               return;
             }
-            currentUser = dataSync.user;
+            currentUser = userAtualizado;
             localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
           }
         } catch (errSync) {}
@@ -1793,7 +1942,7 @@
             method: 'POST',
             body: JSON.stringify({
               action: 'adicionarOrcamento',
-              primeiroNome: currentUser.primeiroNome,
+              primeiroNome: currentUser.idUsuarioScript,
               ...registroOrcamento
             })
           });
@@ -1801,7 +1950,7 @@
           if (resData.status === 'blocked') {
             btn.disabled = false;
             btn.innerText = 'Gerar PDF e Salvar';
-            travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+            travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
             return;
           }
           if (resData.status === 'success' && resData.id) {
@@ -1876,15 +2025,15 @@
         document.getElementById('listaHistorico').innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Buscando orçamentos salvos...</p>';
       }
 
-      if (scriptUrl && currentUser && currentUser.primeiroNome) {
+      if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
         try {
-          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
+          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`);
           const data = await resp.json();
 
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
             const statusResp = String(data.statusPlano || '').trim().toUpperCase();
             if (statusResp === 'OFF' || data.planoAtivo === false) {
-              travarNoLoginPorFaltaDePagamento(currentUser.empresa || currentUser.primeiroNome);
+              travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
               return;
             }
             salvarOrcamentosLocaisUsuario(data.orcamentos);
@@ -1946,13 +2095,13 @@
       salvarOrcamentosLocaisUsuario(filtrados);
       renderizarListaHistoricoUI(filtrados);
 
-      if (scriptUrl && currentUser && currentUser.primeiroNome) {
+      if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
         try {
           await fetch(scriptUrl, {
             method: 'POST',
             body: JSON.stringify({
               action: 'removerOrcamento',
-              primeiroNome: currentUser.primeiroNome,
+              primeiroNome: currentUser.idUsuarioScript,
               id: idRegistro
             })
           });
