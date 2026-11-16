@@ -9,13 +9,13 @@
   <meta name="apple-mobile-web-app-title" content="FlowNest Orçamentos" />
   <link rel="apple-touch-icon" href="./flow.jpg" />
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
-  <title>FlowNest(IA) APP</title>
+  <title>FlowNest(IA)</title>
   <link rel="manifest" href="./manifest.json" />
   <style>
     :root {
       --glass-bg: rgba(255, 255, 255, 0.74);
-      --glass-border: rgba(255, 255, 255, 0.6);
-      --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.65);
+      --glass-shadow: 0 12px 40px rgba(15, 23, 42, 0.09);
       --primary: #0f172a;
       --accent: #007aff;
       --accent-soft: rgba(0, 122, 255, 0.12);
@@ -23,7 +23,7 @@
       --danger: #ff3b30;
       --text: #1d1d1f;
       --muted: #6e6e73;
-      --radius-lg: 22px;
+      --radius-lg: 24px;
       --radius-md: 14px;
     }
 
@@ -42,7 +42,9 @@
       overscroll-behavior-y: none;
       -webkit-text-size-adjust: 100%;
       color: var(--text);
-      background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 45%, #dbeafe 100%);
+      background: radial-gradient(circle at 15% 15%, #dbeafe 0%, transparent 45%),
+                  radial-gradient(circle at 85% 80%, #e0e7ff 0%, transparent 50%),
+                  linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       background-attachment: fixed;
     }
 
@@ -50,26 +52,34 @@
       padding-bottom: calc(105px + env(safe-area-inset-bottom));
     }
 
-    .bg-orb-1, .bg-orb-2 {
+    .bg-orb-1, .bg-orb-2, .bg-orb-3 {
       position: fixed;
       border-radius: 50%;
-      filter: blur(70px);
+      filter: blur(75px);
       z-index: -1;
       pointer-events: none;
     }
     .bg-orb-1 {
-      width: 280px;
-      height: 280px;
-      background: rgba(0, 122, 255, 0.18);
-      top: -60px;
-      right: -50px;
-    }
-    .bg-orb-2 {
       width: 300px;
       height: 300px;
-      background: rgba(52, 199, 89, 0.14);
-      bottom: 40px;
-      left: -80px;
+      background: rgba(0, 122, 255, 0.22);
+      top: -80px;
+      right: -60px;
+    }
+    .bg-orb-2 {
+      width: 320px;
+      height: 320px;
+      background: rgba(56, 189, 248, 0.18);
+      bottom: 20px;
+      left: -90px;
+    }
+    .bg-orb-3 {
+      width: 220px;
+      height: 220px;
+      background: rgba(99, 102, 241, 0.15);
+      top: 42%;
+      left: 55%;
+      transform: translate(-50%, -50%);
     }
 
     /* =========================================================
@@ -77,8 +87,8 @@
        ========================================================= */
     .glass-card {
       background: var(--glass-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
       border: 1px solid var(--glass-border);
       border-radius: var(--radius-lg);
       padding: 18px;
@@ -93,7 +103,7 @@
       background: rgba(255, 255, 255, 0.82);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.65);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.7);
       padding: calc(12px + env(safe-area-inset-top)) 16px 12px 16px;
       display: flex;
       justify-content: space-between;
@@ -149,18 +159,20 @@
     }
 
     .btn-glass-icon {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      background: rgba(255, 255, 255, 0.78);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       color: var(--primary);
-      transition: transform 0.14s ease;
+      transition: transform 0.14s ease, background 0.14s ease;
       position: relative;
     }
 
@@ -210,7 +222,7 @@
     }
 
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     label {
@@ -218,37 +230,37 @@
       font-size: 0.78rem;
       font-weight: 600;
       color: #3a3a3c;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
     }
 
     /* Fonte 16px obrigatória para impedir zoom automático no iPhone/Safari */
     input, textarea, select {
       width: 100%;
-      padding: 12px 14px;
+      padding: 13px 15px;
       border-radius: var(--radius-md);
       border: 1px solid rgba(148, 163, 184, 0.35);
       background: rgba(255, 255, 255, 0.88);
       font-size: 16px;
       color: var(--text);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
     input:focus, textarea:focus, select:focus {
       outline: none;
       background: #ffffff;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3.5px rgba(0, 122, 255, 0.16);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.16);
     }
 
     /* =========================================================
-       TELA DE LOGIN (PRIMEIRO NOME)
+       TELA DE LOGIN REFINADA (APPLE GLASS + LOGO.JPG + SENHA)
        ========================================================= */
     #loginScreen {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 24px 20px;
       position: relative;
     }
 
@@ -261,38 +273,108 @@
 
     .login-box {
       width: 100%;
-      max-width: 400px;
+      max-width: 390px;
       text-align: center;
-      padding: 32px 24px;
+      padding: 38px 26px 28px 26px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 30px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      animation: loginAppear 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes loginAppear {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .login-logo-ring {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 20px auto;
+      padding: 4px;
+      border-radius: 26px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(226,232,240,0.65));
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .login-logo-img {
-      width: 74px;
-      height: 74px;
-      margin: 0 auto 16px auto;
-      border-radius: 20px;
+      width: 100%;
+      height: 100%;
+      border-radius: 22px;
       object-fit: cover;
       display: block;
-      box-shadow: 0 10px 24px rgba(0, 122, 255, 0.25);
-      border: 2px solid #fff;
+    }
+
+    .login-title {
+      margin: 0 0 6px 0;
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--primary);
+    }
+
+    .login-subtitle {
+      margin: 0 0 26px 0;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .password-field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-field-wrap input {
+      padding-right: 46px;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-toggle-pass {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      padding: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-primary-apple {
       width: 100%;
-      padding: 14px;
-      border-radius: var(--radius-md);
+      padding: 15px;
+      border-radius: 16px;
       border: none;
-      background: var(--accent);
+      background: linear-gradient(180deg, #007aff 0%, #0062cc 100%);
       color: #fff;
       font-size: 1rem;
       font-weight: 600;
+      letter-spacing: -0.01em;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0, 122, 255, 0.28);
-      transition: transform 0.14s ease;
+      box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3);
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
     }
 
     .btn-primary-apple:active {
       transform: scale(0.97);
+    }
+
+    .login-footer-tag {
+      margin-top: 22px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      font-size: 0.74rem;
+      color: var(--muted);
     }
 
     /* =========================================================
@@ -684,7 +766,7 @@
         background: #fff !important;
         padding: 0 !important;
       }
-      .bg-orb-1, .bg-orb-2, #loginScreen, #appScreen, .glass-dock, .preview-bar, .modal-backdrop {
+      .bg-orb-1, .bg-orb-2, .bg-orb-3, #loginScreen, #appScreen, .glass-dock, .preview-bar, .modal-backdrop {
         display: none !important;
       }
       #printDocument {
@@ -700,34 +782,45 @@
 <body>
   <div class="bg-orb-1"></div>
   <div class="bg-orb-2"></div>
+  <div class="bg-orb-3"></div>
 
   <!-- =========================================================
-       1. TELA DE LOGIN (PRIMEIRO NOME DO PRESTADOR)
+       1. TELA DE LOGIN REFINADA (LOGO.JPG + CAMPO SENHA)
        ========================================================= -->
   <section id="loginScreen">
-    <button type="button" class="btn-glass-icon login-gear" onclick="abrirModalScript()" title="Configurar URL do Apps Script">
+    <button type="button" class="btn-glass-icon login-gear" onclick="abrirModalScript()" title="Configurações">
       ⚙️
     </button>
 
-    <div class="glass-card login-box">
-      <img src="./flow.jpg" alt="FlowNest" class="login-logo-img" onerror="this.style.display='none'" />
-      <h2 style="margin:0 0 6px 0; font-size:1.4rem; letter-spacing:-0.02em;">Acesso ao Sistema</h2>
-      <p style="margin:0 0 22px 0; font-size:0.88rem; color:var(--muted);">
-        Digite seu <strong>primeiro nome</strong> cadastrado na planilha para entrar.
-      </p>
+    <div class="login-box">
+      <div class="login-logo-ring" id="loginLogoRing">
+        <img src="./logo.jpg" alt="Logo" class="login-logo-img" onerror="document.getElementById('loginLogoRing').style.display='none'" />
+      </div>
 
-      <div class="form-group" style="text-align:left;">
-        <label>Primeiro Nome</label>
-        <input type="text" id="loginPrimeiroNome" placeholder="Ex: leo" autocomplete="given-name" />
+      <h2 class="login-title">Bem-vindo</h2>
+      <p class="login-subtitle">Insira sua senha para acessar o painel</p>
+
+      <div class="form-group" style="text-align:left; margin-bottom:18px;">
+        <label for="loginSenhaInput">Senha</label>
+        <div class="password-field-wrap">
+          <input type="password" id="loginSenhaInput" placeholder="••••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') realizarLogin()" />
+          <button type="button" class="btn-toggle-pass" onclick="alternarVisibilidadeSenha()" aria-label="Mostrar senha">
+            <svg id="iconEye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <button type="button" id="btnEntrar" class="btn-primary-apple" onclick="realizarLogin()">
-        Entrar no Aplicativo
+        Entrar
       </button>
 
-      <p id="loginStatusMsg" style="font-size:0.8rem; color:var(--danger); margin-top:12px; min-height:18px;"></p>
+      <p id="loginStatusMsg" style="font-size:0.8rem; color:var(--danger); margin:12px 0 0 0; min-height:18px;"></p>
 
-      <div style="margin-top:18px; font-size:0.75rem; color:var(--muted);">
+      <div class="login-footer-tag">
         Desenvolvido pelo <strong>FlowNest(IA)</strong>
       </div>
     </div>
@@ -742,7 +835,7 @@
         <img src="./logo.jpg" alt="Logo Empresa" class="company-logo-header" onerror="this.style.display='none'" />
         <div class="header-brand">
           <h1 id="uiEmpresaNome">Empresa</h1>
-          <small id="uiPrestadorInfo">Olá, Usuário • FlowNest(IA)</small>
+          <small id="uiPrestadorInfo">FlowNest(IA)</small>
         </div>
       </div>
       <div class="header-actions">
@@ -751,8 +844,8 @@
           📋
           <span id="badgeQtdOrcamentos" class="badge-count">0</span>
         </button>
-        <button type="button" class="btn-glass-icon" onclick="abrirModalScript()" title="Configurar URL Apps Script">⚙️</button>
-        <button type="button" class="btn-glass-icon" onclick="sairConta()" title="Sair da Conta">🚪</button>
+        <button type="button" class="btn-glass-icon" onclick="abrirModalScript()" title="Configurar URL">⚙️</button>
+        <button type="button" class="btn-glass-icon" onclick="sairConta()" title="Sair">🚪</button>
       </div>
     </header>
 
@@ -772,7 +865,7 @@
         </div>
       </div>
 
-      <!-- Dados do Cliente Orçado (Quem vai receber o serviço) -->
+      <!-- Dados do Cliente Orçado -->
       <div class="glass-card">
         <div class="section-label">Dados do Cliente (Tomador do Serviço)</div>
         <div class="form-group">
@@ -804,7 +897,7 @@
         </div>
       </div>
 
-      <!-- Materiais e Itens (Começa com apenas 1 em branco) -->
+      <!-- Materiais e Itens -->
       <div class="glass-card">
         <div class="section-label">
           <span>Materiais e Itens</span>
@@ -818,7 +911,7 @@
         </button>
       </div>
 
-      <!-- Forma de Pagamento (Sempre PIX) + Observação Opcional (+) -->
+      <!-- Pagamento & Observações -->
       <div class="glass-card">
         <div class="section-label">Pagamento & Observações</div>
 
@@ -931,7 +1024,7 @@
       </div>
     </div>
 
-    <!-- Bloco PIX com QR Code gerado da Chave PIX da aba Login -->
+    <!-- Bloco PIX -->
     <div class="doc-block" id="docBlocoPix">
       <div class="doc-block-title">Pagamento Instantâneo via PIX</div>
       <div class="doc-pix-card">
@@ -947,7 +1040,7 @@
       </div>
     </div>
 
-    <!-- Bloco Observações (Aparece somente se preenchido) -->
+    <!-- Bloco Observações -->
     <div class="doc-block" id="docBlocoObs" style="display:none;">
       <div class="doc-block-title">Observações</div>
       <p id="docObsTexto" style="margin:4px 0; font-size:12.5px;"></p>
@@ -1000,11 +1093,11 @@
   <div id="modalHistorico" class="modal-backdrop">
     <div class="modal-sheet" style="max-width:560px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <h3 style="margin:0;">📋 Orçamentos de <span id="tituloHistUsuario"></span></h3>
+        <h3 style="margin:0;">📋 Orçamentos Salvos</h3>
         <button type="button" class="btn-bar" style="background:#94a3b8; padding:6px 12px;" onclick="fecharHistorico()">Fechar</button>
       </div>
       <p style="margin:0 0 12px 0; font-size:0.78rem; color:var(--muted);">
-        Exibindo apenas os clientes e orçamentos vinculados ao seu usuário.
+        Exibindo apenas os orçamentos vinculados à sua conta.
       </p>
       <div id="listaHistorico" style="max-height:65vh; overflow-y:auto;"></div>
     </div>
@@ -1200,30 +1293,35 @@
     }
 
     // =========================================================
-    // LOGIN POR PRIMEIRO NOME + SINCRONIZAÇÃO ISOLADA
+    // LOGIN POR SENHA + SINCRONIZAÇÃO ISOLADA
     // =========================================================
+    function alternarVisibilidadeSenha() {
+      const input = document.getElementById('loginSenhaInput');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
     async function realizarLogin() {
-      const nomeInput = document.getElementById('loginPrimeiroNome').value.trim();
+      const senhaInput = document.getElementById('loginSenhaInput').value.trim();
       const msgEl = document.getElementById('loginStatusMsg');
       const btn = document.getElementById('btnEntrar');
 
       msgEl.innerText = '';
 
       if (!scriptUrl) {
-        msgEl.innerText = 'Configure primeiro a URL do Apps Script na engrenagem (⚙️) no canto superior.';
+        msgEl.innerText = 'Configure a URL do sistema na engrenagem (⚙️) acima.';
         return;
       }
 
-      if (!nomeInput) {
-        msgEl.innerText = 'Digite seu primeiro nome para entrar.';
+      if (!senhaInput) {
+        msgEl.innerText = 'Digite sua senha para continuar.';
         return;
       }
 
       btn.disabled = true;
-      btn.innerText = 'Verificando...';
+      btn.innerText = 'Entrando...';
 
       try {
-        const urlRequisicao = `${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(nomeInput)}`;
+        const urlRequisicao = `${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(senhaInput)}`;
         const resp = await fetch(urlRequisicao);
         const data = await resp.json();
 
@@ -1232,13 +1330,13 @@
           localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
           ativarTelaApp(currentUser);
         } else {
-          msgEl.innerText = data.message || 'Primeiro nome não autorizado.';
+          msgEl.innerText = 'Senha incorreta ou acesso não autorizado.';
         }
       } catch (err) {
-        msgEl.innerText = 'Erro de conexão com a Planilha Google. Verifique a URL na engrenagem.';
+        msgEl.innerText = 'Erro de conexão com o servidor. Verifique a URL na engrenagem.';
       } finally {
         btn.disabled = false;
-        btn.innerText = 'Entrar no Aplicativo';
+        btn.innerText = 'Entrar';
       }
     }
 
@@ -1246,12 +1344,12 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
       document.getElementById('uiEmpresaNome').innerText = user.empresa || user.primeiroNome;
-      document.getElementById('uiPrestadorInfo').innerText = `Olá, ${user.primeiroNome} • FlowNest(IA)`;
+      document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${user.responsavel || user.primeiroNome}`;
       document.getElementById('badgeChavePixAtiva').innerText = user.pixChave ? `Chave: ${user.pixChave}` : 'Sem chave PIX na planilha';
       renderizarItens();
       atualizarBadgeContador();
 
-      // Sincroniza em segundo plano os orçamentos exclusivos deste usuário da planilha
+      // Sincroniza em segundo plano os orçamentos exclusivos deste usuário
       if (scriptUrl && user.primeiroNome) {
         try {
           const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(user.primeiroNome)}`);
@@ -1269,7 +1367,7 @@
         currentUser = null;
         document.getElementById('appScreen').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('loginPrimeiroNome').value = '';
+        document.getElementById('loginSenhaInput').value = '';
       }
     }
 
@@ -1399,7 +1497,7 @@
       btn.disabled = true;
       btn.innerText = 'Salvando...';
 
-      // Sincroniza dados mais recentes da aba Login (Chave PIX atualizada)
+      // Sincroniza dados mais recentes da aba Login
       if (scriptUrl && currentUser && currentUser.primeiroNome) {
         try {
           const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
@@ -1460,7 +1558,7 @@
       const totalStr = formatarMoeda(totalNum);
       document.getElementById('docTotalValor').innerText = totalStr;
 
-      // 4. Converte a Chave PIX da Coluna B (aba Login) em QR Code oficial com valor
+      // 4. Converte a Chave PIX em QR Code oficial com valor
       const chavePixPlanilha = (currentUser.pixChave || '').trim();
       document.getElementById('docPixTotal').innerText = totalStr;
       document.getElementById('docPixChave').innerText = chavePixPlanilha || 'Chave não cadastrada na aba Login';
@@ -1558,7 +1656,7 @@
     function copiarCodigoPix() {
       const code = ultimoPixCopiaColaGerado || currentUser.pixChave || '';
       if (!code) {
-        alert('Nenhuma chave PIX cadastrada na aba Login.');
+        alert('Nenhuma chave PIX cadastrada.');
         return;
       }
       navigator.clipboard.writeText(code).then(() => {
@@ -1572,7 +1670,7 @@
     function renderizarListaHistoricoUI(orcamentos) {
       const listaEl = document.getElementById('listaHistorico');
       if (!orcamentos || orcamentos.length === 0) {
-        listaEl.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Nenhum orçamento salvo ainda para este usuário.</p>';
+        listaEl.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Nenhum orçamento salvo ainda para esta conta.</p>';
         return;
       }
 
@@ -1602,18 +1700,15 @@
     }
 
     async function abrirHistorico() {
-      document.getElementById('tituloHistUsuario').innerText = currentUser.primeiroNome;
       document.getElementById('modalHistorico').style.display = 'flex';
 
-      // Mostra imediatamente o cache local deste usuário (instantâneo mesmo offline)
       const cacheLocal = obterOrcamentosLocaisUsuario();
       if (cacheLocal.length > 0) {
         renderizarListaHistoricoUI(cacheLocal);
       } else {
-        document.getElementById('listaHistorico').innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Buscando orçamentos na sua aba...</p>';
+        document.getElementById('listaHistorico').innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Buscando orçamentos salvos...</p>';
       }
 
-      // Atualiza com os dados da aba exclusiva deste usuário na Planilha Google
       if (scriptUrl && currentUser && currentUser.primeiroNome) {
         try {
           const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(currentUser.primeiroNome)}`);
@@ -1665,12 +1760,10 @@
     async function excluirOrcamentoCompleto(idRegistro, numeroOrc) {
       if (!confirm('Deseja excluir permanentemente este orçamento?')) return;
 
-      // Remove do cache local deste usuário
       const filtrados = obterOrcamentosLocaisUsuario().filter(o => o.id !== idRegistro && o.numeroOrcamento !== numeroOrc);
       salvarOrcamentosLocaisUsuario(filtrados);
       renderizarListaHistoricoUI(filtrados);
 
-      // Remove da aba exclusiva deste usuário na Planilha Google
       if (scriptUrl && currentUser && currentUser.primeiroNome) {
         try {
           await fetch(scriptUrl, {
