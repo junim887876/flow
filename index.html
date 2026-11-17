@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="FlowNest Orçamentos" />
   <link rel="apple-touch-icon" href="./flow.jpg" />
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
-  <title>FlowNest AP</title>
+  <title>FlowNest</title>
   <link rel="manifest" href="./manifest.json" />
 
   <!-- =========================================================
@@ -992,7 +992,7 @@
             <label>Forma de Pagamento</label>
             <div class="pix-badge-fixed">
               <span>💠 Pagamento via PIX</span>
-              <span id="badgeChavePixAtiva" style="font-size:0.74rem; opacity:0.9;">Chave vinculada</span>
+              <span id="badgeChavePixAtiva" style="font-size:0.74rem; opacity:0.9;">Carregando PIX...</span>
             </div>
           </div>
 
@@ -1188,60 +1188,18 @@
     }, { passive: false });
 
     // =========================================================
-    // NORMALIZAÇÃO E SANITIZAÇÃO DOS DADOS VINDOS DA PLANILHA
+    // ESTADO GLOBAL E NORMALIZAÇÃO
     // =========================================================
     const STORAGE_KEY_URL = 'flownest_apps_script_url';
     const STORAGE_KEY_USER = 'flownest_logged_user';
 
     let scriptUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
     let currentUser = JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || 'null');
+    let ultimaSenhaTentada = '';
 
     let itensOrcamento = [
       { desc: '', qtd: '', un: 'un', unit: '' }
     ];
-
-    function isTelefone(val) {
-      const s = String(val || '').trim();
-      if (!s || s.includes('@') || /[a-zA-ZÀ-ÿ]/.test(s)) return false;
-      const digits = s.replace(/\D/g, '');
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false;
-      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false;
-      if (digits.length === 14) return false;
-      if (/^\(?\d{2}\)?\s?9?\d{4}-?\d{4}$/.test(s)) return true;
-      if (digits.length >= 10 && digits.length <= 13 && !s.includes('.')) return true;
-      return false;
-    }
-
-    function isTextoNomeValido(val) {
-      const s = String(val || '').trim();
-      if (!s || s.length < 2) return false;
-      if (isTelefone(s)) return false;
-      if (s.includes('@') || s.startsWith('http')) return false;
-      if (/^\d+$/.test(s)) return false;
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false;
-      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false;
-      const upper = s.toUpperCase();
-      if (['ATIVO', 'OFF', 'INATIVO', 'PENDENTE', 'BLOQUEADO', 'SIM', 'NAO', 'NÃO', 'TRUE', 'FALSE'].includes(upper)) {
-        return false;
-      }
-      return true;
-    }
-
-    function buscarCampoPorChaves(obj, listaChaves) {
-      if (!obj || typeof obj !== 'object') return '';
-      const mapa = {};
-      Object.keys(obj).forEach(k => {
-        const norm = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-        mapa[norm] = obj[k];
-      });
-      for (const chave of listaChaves) {
-        const normChave = chave.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-        if (mapa[normChave] !== undefined && mapa[normChave] !== null && String(mapa[normChave]).trim() !== '') {
-          return String(mapa[normChave]).trim();
-        }
-      }
-      return '';
-    }
 
     function normalizarDadosUsuario(rawUser, senhaDigitada) {
       if (!rawUser || typeof rawUser !== 'object') return null;
@@ -1253,98 +1211,36 @@
         ''
       ).trim();
 
-      let telefoneLimpo = buscarCampoPorChaves(rawUser, ['telefoneLimpo', 'telefone', 'celular', 'whatsapp', 'fone', 'tel', 'contato']);
-      if (!telefoneLimpo) {
-        const empresaBruta = buscarCampoPorChaves(rawUser, ['empresa', 'nomeEmpresa']);
-        if (isTelefone(empresaBruta)) {
-          telefoneLimpo = empresaBruta;
-        }
-      }
+      const statusLimpo = String(rawUser.status || '').trim().toUpperCase();
+      const planoAtivo = (statusLimpo === 'ATIVO') || (rawUser.planoAtivo === true);
 
-      let nomeExibicao = '';
-      const candidatosNome = [
-        buscarCampoPorChaves(rawUser, ['nomeExibicao']),
-        buscarCampoPorChaves(rawUser, ['nome', 'nomeCompleto']),
-        buscarCampoPorChaves(rawUser, ['responsavel', 'prestador']),
-        buscarCampoPorChaves(rawUser, ['primeiroNome', 'usuario', 'titular'])
-      ];
-      for (const cand of candidatosNome) {
-        if (isTextoNomeValido(cand)) {
-          nomeExibicao = cand;
-          break;
-        }
-      }
-
-      if (!nomeExibicao && isTextoNomeValido(senhaDigitada)) {
-        nomeExibicao = String(senhaDigitada).trim();
-      }
-
-      if (!nomeExibicao) {
-        const chavesIgnorar = new Set(['status', 'planoativo', 'pixchave', 'chavepix', 'pix', 'cidade', 'email', 'doc', 'cpf', 'cnpj', 'telefone', 'telefonelimpo', 'senha']);
-        for (const k of Object.keys(rawUser)) {
-          const kNorm = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-          if (chavesIgnorar.has(kNorm)) continue;
-          const v = String(rawUser[k] || '').trim();
-          if (isTextoNomeValido(v)) {
-            nomeExibicao = v;
-            break;
-          }
-        }
-      }
-
-      let empresaValida = '';
-      const candidatosEmpresa = [
-        buscarCampoPorChaves(rawUser, ['empresaValida']),
-        buscarCampoPorChaves(rawUser, ['empresa', 'nomeEmpresa', 'razaoSocial', 'nomeFantasia', 'fantasia'])
-      ];
-      for (const candEmp of candidatosEmpresa) {
-        if (isTextoNomeValido(candEmp)) {
-          empresaValida = candEmp;
-          break;
-        }
-      }
-
-      const docLimpo = buscarCampoPorChaves(rawUser, ['doc', 'cpf', 'cnpj', 'documento']);
-      const emailLimpo = buscarCampoPorChaves(rawUser, ['email', 'e-mail']);
-      const cidadeLimpa = buscarCampoPorChaves(rawUser, ['cidade', 'municipio', 'localidade']);
-      const pixLimpo = buscarCampoPorChaves(rawUser, ['pixChave', 'chavePix', 'pix']);
-      const statusLimpo = buscarCampoPorChaves(rawUser, ['status', 'situacao']);
+      const empresa = String(rawUser.empresa || '').trim();
+      const responsavel = String(rawUser.responsavel || '').trim();
+      const nomeExibicao = responsavel || empresa || idUsuarioScript || 'Usuário';
 
       return {
         ...rawUser,
         idUsuarioScript: idUsuarioScript,
-        primeiroNome: idUsuarioScript || nomeExibicao,
-        nomeExibicao: nomeExibicao || 'Usuário',
-        empresaValida: empresaValida,
-        empresa: empresaValida || nomeExibicao || 'Usuário',
-        responsavel: nomeExibicao || empresaValida || 'Usuário',
-        telefoneLimpo: telefoneLimpo,
-        telefone: telefoneLimpo,
-        doc: docLimpo,
-        email: emailLimpo,
-        cidade: cidadeLimpa,
-        pixChave: pixLimpo,
-        status: statusLimpo || rawUser.status || ''
+        primeiroNome: idUsuarioScript,
+        nomeExibicao: nomeExibicao,
+        empresaValida: empresa,
+        empresa: empresa || nomeExibicao,
+        responsavel: nomeExibicao,
+        telefoneLimpo: String(rawUser.telefone || '').trim(),
+        telefone: String(rawUser.telefone || '').trim(),
+        doc: String(rawUser.doc || '').trim(),
+        email: String(rawUser.email || '').trim(),
+        cidade: String(rawUser.cidade || '').trim(),
+        pixChave: String(rawUser.pixChave || '').trim(),
+        status: planoAtivo ? 'ATIVO' : 'OFF',
+        planoAtivo: planoAtivo
       };
     }
 
-    // =========================================================
-    // VERIFICAÇÃO ESTRITA DE ASSINATURA (ATIVO / OFF)
-    // =========================================================
     function verificarUsuarioAtivo(user) {
       if (!user) return false;
       const statusLimpo = String(user.status || '').trim().toUpperCase();
-
-      if (statusLimpo === 'OFF' || statusLimpo === 'INATIVO' || statusLimpo === 'BLOQUEADO' || statusLimpo === 'PENDENTE') {
-        return false;
-      }
-      if (statusLimpo === 'ATIVO') {
-        return true;
-      }
-      if (typeof user.planoAtivo === 'boolean') {
-        return user.planoAtivo;
-      }
-      return false;
+      return statusLimpo === 'ATIVO' || user.planoAtivo === true;
     }
 
     function travarNoLoginPorFaltaDePagamento(nomeConta) {
@@ -1362,7 +1258,7 @@
       const msgEl = document.getElementById('loginStatusMsg');
 
       if (msgEl) msgEl.innerText = '';
-      if (nomeConta && isTextoNomeValido(nomeConta)) {
+      if (nomeConta) {
         alertTexto.innerHTML = `A conta <strong>${nomeConta}</strong> está bloqueada por <strong>falta de pagamento da mensalidade</strong> (status OFF). Regularize sua assinatura com o <strong>FlowNest(IA)</strong> para acessar o app.`;
       } else {
         alertTexto.innerHTML = `Seu acesso está bloqueado por <strong>falta de pagamento da mensalidade</strong> (status OFF). Regularize sua assinatura com o <strong>FlowNest(IA)</strong> para acessar o app.`;
@@ -1401,45 +1297,50 @@
       }
     }
 
+    function aplicarDadosPerfilNaTela(u) {
+      const tituloCantoSuperior = u.empresaValida || u.nomeExibicao || u.primeiroNome || 'Painel';
+      document.getElementById('uiEmpresaNome').innerText = tituloCantoSuperior;
+
+      if (u.empresaValida && u.nomeExibicao && u.empresaValida.toLowerCase() !== u.nomeExibicao.toLowerCase()) {
+        document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${u.nomeExibicao}`;
+      } else {
+        document.getElementById('uiPrestadorInfo').innerText = 'FlowNest(IA)';
+      }
+
+      document.getElementById('badgeChavePixAtiva').innerText = u.pixChave
+        ? `Chave: ${u.pixChave}`
+        : 'Sem chave PIX na planilha';
+    }
+
     // =========================================================
-    // INICIALIZAÇÃO INSTANTÂNEA (SEM TRAVAR NA TELA DE LOGIN)
+    // INICIALIZAÇÃO INSTANTÂNEA
     // =========================================================
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('orcData').valueAsDate = new Date();
       gerarNumeroOrcamentoPadrao();
 
-      if (currentUser) {
-        currentUser = normalizarDadosUsuario(currentUser);
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-      }
-
       if (currentUser && currentUser.idUsuarioScript) {
+        currentUser = normalizarDadosUsuario(currentUser, currentUser.idUsuarioScript);
+
         if (!verificarUsuarioAtivo(currentUser)) {
-          travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
+          travarNoLoginPorFaltaDePagamento(currentUser.primeiroNome);
           return;
         }
 
-        // 1. Abre imediatamente com os dados já salvos no aparelho
+        // Abre o painel na hora (0ms)
         ativarTelaApp(currentUser);
 
-        // 2. Valida assinatura na planilha em segundo plano sem bloquear a tela
+        // ETAPA 1 em segundo plano: verifica APENAS PrimeiroNome + Status
         if (scriptUrl) {
-          fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`)
-            .then(resp => resp.json())
+          fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}&_t=${Date.now()}`)
+            .then(r => r.json())
             .then(data => {
               if (data.status === 'success' && data.user) {
-                const userAtualizado = normalizarDadosUsuario(data.user, currentUser.idUsuarioScript);
-                if (!verificarUsuarioAtivo(userAtualizado)) {
-                  travarNoLoginPorFaltaDePagamento(userAtualizado.nomeExibicao);
-                  return;
+                if (!verificarUsuarioAtivo(data.user)) {
+                  travarNoLoginPorFaltaDePagamento(data.user.primeiroNome);
                 }
-                currentUser = userAtualizado;
-                localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-                document.getElementById('badgeChavePixAtiva').innerText = currentUser.pixChave
-                  ? `Chave: ${currentUser.pixChave}`
-                  : 'Sem chave PIX na planilha';
-              } else {
-                travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
+              } else if (data.status === 'not_found') {
+                travarNoLoginPorFaltaDePagamento(currentUser.primeiroNome);
               }
             })
             .catch(() => {});
@@ -1565,7 +1466,7 @@
     }
 
     // =========================================================
-    // LOGIN POR SENHA COM BLOQUEIO TOTAL SE STATUS = OFF
+    // ETAPA 1: LOGIN ULTRA-RÁPIDO (LÊ APENAS PRIMEIRONOME + STATUS)
     // =========================================================
     function alternarVisibilidadeSenha() {
       const input = document.getElementById('loginSenhaInput');
@@ -1573,7 +1474,7 @@
     }
 
     async function realizarLogin() {
-      const senhaInput = document.getElementById('loginSenhaInput').value.trim();
+      const senhaDigitada = document.getElementById('loginSenhaInput').value.trim() || ultimaSenhaTentada;
       const msgEl = document.getElementById('loginStatusMsg');
       const alertBox = document.getElementById('loginBloqueioAlert');
       const btn = document.getElementById('btnEntrar');
@@ -1587,33 +1488,37 @@
         return;
       }
 
-      if (!senhaInput) {
+      if (!senhaDigitada) {
         msgEl.innerText = 'Digite sua senha para continuar.';
         return;
       }
 
+      ultimaSenhaTentada = senhaDigitada;
       btn.disabled = true;
-      btn.innerText = 'Entrando...';
+      btn.innerText = 'Verificando...';
       if (btnRecheck) {
         btnRecheck.disabled = true;
-        btnRecheck.innerText = 'Consultando...';
+        btnRecheck.innerText = 'Verificando status...';
       }
 
       try {
-        const urlRequisicao = `${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(senhaInput)}`;
+        // Chama action=login (lê SOMENTE PrimeiroNome + Status na planilha)
+        const urlRequisicao = `${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(senhaDigitada)}&_t=${Date.now()}`;
         const resp = await fetch(urlRequisicao);
         const data = await resp.json();
 
         if (data.status === 'success' && data.user) {
-          const userNormalizado = normalizarDadosUsuario(data.user, senhaInput);
+          const authUser = normalizarDadosUsuario(data.user, senhaDigitada);
 
-          if (!verificarUsuarioAtivo(userNormalizado)) {
-            travarNoLoginPorFaltaDePagamento(userNormalizado.nomeExibicao);
+          // Se status = OFF, trava no alerta vermelho (nunca diz "usuário não existe")
+          if (!verificarUsuarioAtivo(authUser)) {
+            travarNoLoginPorFaltaDePagamento(authUser.primeiroNome);
             return;
           }
 
+          // Status = ATIVO -> Libera o app IMEDIATAMENTE
           alertBox.style.display = 'none';
-          currentUser = userNormalizado;
+          currentUser = authUser;
           localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
           ativarTelaApp(currentUser);
         } else {
@@ -1632,14 +1537,26 @@
       }
     }
 
+    // =========================================================
+    // ETAPA 2: ABRE O PAINEL E CARREGA O RESTANTE EM SEGUNDO PLANO
+    // =========================================================
     function ativarTelaApp(user) {
-      const u = normalizarDadosUsuario(user);
+      const u = normalizarDadosUsuario(user, user.idUsuarioScript || user.primeiroNome);
       if (!verificarUsuarioAtivo(u)) {
-        travarNoLoginPorFaltaDePagamento(u ? u.nomeExibicao : '');
+        travarNoLoginPorFaltaDePagamento(u ? u.primeiroNome : '');
         return;
       }
       currentUser = u;
 
+      // Abre a tela do app imediatamente
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+
+      aplicarDadosPerfilNaTela(u);
+      renderizarItens();
+      atualizarBadgeContador();
+
+      // Registra push OneSignal sem travar
       if (u.idUsuarioScript) {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
@@ -1652,25 +1569,25 @@
         });
       }
 
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('appScreen').style.display = 'block';
-
-      const tituloCantoSuperior = u.empresaValida || u.nomeExibicao || 'Painel';
-      document.getElementById('uiEmpresaNome').innerText = tituloCantoSuperior;
-
-      if (u.empresaValida && u.nomeExibicao && u.empresaValida.toLowerCase() !== u.nomeExibicao.toLowerCase()) {
-        document.getElementById('uiPrestadorInfo').innerText = `FlowNest(IA) • ${u.nomeExibicao}`;
-      } else {
-        document.getElementById('uiPrestadorInfo').innerText = 'FlowNest(IA)';
-      }
-
-      document.getElementById('badgeChavePixAtiva').innerText = u.pixChave ? `Chave: ${u.pixChave}` : 'Sem chave PIX na planilha';
-      renderizarItens();
-      atualizarBadgeContador();
-
-      // Sincroniza histórico da planilha em segundo plano sem travar a interface
+      // Busca o restante dos dados (Empresa, PIX, CPF, Cidade) + Orçamentos em segundo plano
       if (scriptUrl && u.idUsuarioScript) {
-        fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}`)
+        fetch(`${scriptUrl}?action=perfilCompleto&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}&_t=${Date.now()}`)
+          .then(resp => resp.json())
+          .then(data => {
+            if (data.status === 'success' && data.user) {
+              const perfilCompleto = normalizarDadosUsuario(data.user, u.idUsuarioScript);
+              if (!verificarUsuarioAtivo(perfilCompleto)) {
+                travarNoLoginPorFaltaDePagamento(perfilCompleto.primeiroNome);
+                return;
+              }
+              currentUser = perfilCompleto;
+              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+              aplicarDadosPerfilNaTela(currentUser);
+            }
+          })
+          .catch(() => {});
+
+        fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}&_t=${Date.now()}`)
           .then(resp => resp.json())
           .then(data => {
             if (data.status === 'success' && Array.isArray(data.orcamentos)) {
@@ -1690,6 +1607,7 @@
 
         localStorage.removeItem(STORAGE_KEY_USER);
         currentUser = null;
+        ultimaSenhaTentada = '';
         document.getElementById('appScreen').style.display = 'none';
         document.getElementById('loginBloqueioAlert').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
@@ -1927,7 +1845,6 @@
         observacoes: obs
       };
 
-      // 1. Salva localmente e abre o PDF IMEDIATAMENTE (sem delay de rede)
       const listaLocal = obterOrcamentosLocaisUsuario();
       const idxExistente = listaLocal.findIndex(o => o.numeroOrcamento === numOrc);
       if (idxExistente >= 0) {
@@ -1939,7 +1856,6 @@
       salvarOrcamentosLocaisUsuario(listaLocal);
       preencherDocumentoVisualizacao(registroOrcamento);
 
-      // 2. Sincroniza com a planilha em segundo plano (o servidor já valida status ATIVO/OFF)
       if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
         fetch(scriptUrl, {
           method: 'POST',
@@ -1952,7 +1868,7 @@
           .then(r => r.json())
           .then(resData => {
             if (resData.status === 'blocked') {
-              travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
+              travarNoLoginPorFaltaDePagamento(currentUser.primeiroNome);
             } else if (resData.status === 'success' && resData.id) {
               registroOrcamento.id = resData.id;
               salvarOrcamentosLocaisUsuario(listaLocal);
@@ -2023,13 +1939,13 @@
 
       if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
         try {
-          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`);
+          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}&_t=${Date.now()}`);
           const data = await resp.json();
 
           if (data.status === 'success' && Array.isArray(data.orcamentos)) {
             const statusResp = String(data.statusPlano || '').trim().toUpperCase();
             if (statusResp === 'OFF' || data.planoAtivo === false) {
-              travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
+              travarNoLoginPorFaltaDePagamento(currentUser.primeiroNome);
               return;
             }
             salvarOrcamentosLocaisUsuario(data.orcamentos);
