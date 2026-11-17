@@ -11,6 +11,30 @@
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
   <title>FlowNest(IA)</title>
   <link rel="manifest" href="./manifest.json" />
+
+  <!-- =========================================================
+       ONESIGNAL WEB PUSH SDK v16 (CONFIGURADO PARA /flow/)
+       ========================================================= -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "58eefbaf-7854-45e7-986e-c6942861a6fa",
+        serviceWorkerParam: { scope: "/flow/" },
+        serviceWorkerPath: "flow/sw.js",
+        notifyButton: {
+          enable: false
+        }
+      });
+
+      // Solicita permissão de notificação ao usuário caso ainda não tenha aceitado
+      if (!OneSignal.Notifications.permission) {
+        await OneSignal.Slidedown.promptPush();
+      }
+    });
+  </script>
+
   <style>
     :root {
       --glass-bg: rgba(255, 255, 255, 0.74);
@@ -1438,10 +1462,6 @@
       } else {
         document.getElementById('loginScreen').style.display = 'flex';
       }
-
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      }
     });
 
     function gerarNumeroOrcamentoPadrao() {
@@ -1635,6 +1655,19 @@
       }
       currentUser = u;
 
+      // Vincula o ID do usuário no OneSignal para notificações direcionadas
+      if (u.idUsuarioScript) {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          try {
+            await OneSignal.login(String(u.idUsuarioScript).toLowerCase());
+            if (!OneSignal.Notifications.permission) {
+              await OneSignal.Slidedown.promptPush();
+            }
+          } catch (e) {}
+        });
+      }
+
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
 
@@ -1665,6 +1698,11 @@
 
     function sairConta() {
       if (confirm('Deseja sair da sua conta neste aparelho?')) {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          try { await OneSignal.logout(); } catch (e) {}
+        });
+
         localStorage.removeItem(STORAGE_KEY_USER);
         currentUser = null;
         document.getElementById('appScreen').style.display = 'none';
