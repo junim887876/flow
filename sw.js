@@ -1,4 +1,6 @@
-const CACHE_NAME = 'flownest-orcamentos-pwa-v3';
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
+const CACHE_NAME = 'flownest-orcamentos-pwa-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -28,16 +30,27 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Nunca faz cache das chamadas à API do Google Apps Script
-  if (event.request.url.includes('script.google.com') || event.request.url.includes('script.googleusercontent.com')) {
+  const url = event.request.url;
+
+  // Ignora requisições internas do navegador (ex: chrome-extension://)
+  if (!url.startsWith('http')) return;
+
+  // Nunca faz cache das chamadas à API do Google Apps Script nem do OneSignal
+  if (
+    url.includes('script.google.com') ||
+    url.includes('script.googleusercontent.com') ||
+    url.includes('onesignal.com')
+  ) {
     event.respondWith(fetch(event.request));
     return;
   }
 
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
-        if (event.request.method === 'GET' && response.status === 200) {
+        if (response && response.status === 200) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
