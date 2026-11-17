@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="FlowNest Orçamentos" />
   <link rel="apple-touch-icon" href="./flow.jpg" />
   <link rel="icon" type="image/jpeg" href="./flow.jpg" />
-  <title>FlowNest</title>
+  <title>FlowNest APP</title>
   <link rel="manifest" href="./manifest.json" />
 
   <!-- =========================================================
@@ -28,7 +28,6 @@
         }
       });
 
-      // Solicita permissão de notificação ao usuário caso ainda não tenha aceitado
       if (!OneSignal.Notifications.permission) {
         await OneSignal.Slidedown.promptPush();
       }
@@ -1205,9 +1204,9 @@
       const s = String(val || '').trim();
       if (!s || s.includes('@') || /[a-zA-ZÀ-ÿ]/.test(s)) return false;
       const digits = s.replace(/\D/g, '');
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false; // CPF
-      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false; // CNPJ
-      if (digits.length === 14) return false; // CNPJ puro
+      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false;
+      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false;
+      if (digits.length === 14) return false;
       if (/^\(?\d{2}\)?\s?9?\d{4}-?\d{4}$/.test(s)) return true;
       if (digits.length >= 10 && digits.length <= 13 && !s.includes('.')) return true;
       return false;
@@ -1218,9 +1217,9 @@
       if (!s || s.length < 2) return false;
       if (isTelefone(s)) return false;
       if (s.includes('@') || s.startsWith('http')) return false;
-      if (/^\d+$/.test(s)) return false; // Apenas números (ex: senha numérica)
-      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false; // CPF
-      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false; // CNPJ
+      if (/^\d+$/.test(s)) return false;
+      if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)) return false;
+      if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(s)) return false;
       const upper = s.toUpperCase();
       if (['ATIVO', 'OFF', 'INATIVO', 'PENDENTE', 'BLOQUEADO', 'SIM', 'NAO', 'NÃO', 'TRUE', 'FALSE'].includes(upper)) {
         return false;
@@ -1244,14 +1243,9 @@
       return '';
     }
 
-    /**
-     * Garante que telefone nunca apareça no lugar do nome ("Leo") ou empresa,
-     * mesmo que as colunas da planilha estejam deslocadas.
-     */
     function normalizarDadosUsuario(rawUser, senhaDigitada) {
       if (!rawUser || typeof rawUser !== 'object') return null;
 
-      // 1. Guarda o identificador exato usado pelo Apps Script para buscar/salvar orçamentos
       const idUsuarioScript = String(
         rawUser.idUsuarioScript ||
         rawUser.primeiroNome ||
@@ -1259,7 +1253,6 @@
         ''
       ).trim();
 
-      // 2. Descobre o telefone real (mesmo que tenha vindo deslocado em "empresa")
       let telefoneLimpo = buscarCampoPorChaves(rawUser, ['telefoneLimpo', 'telefone', 'celular', 'whatsapp', 'fone', 'tel', 'contato']);
       if (!telefoneLimpo) {
         const empresaBruta = buscarCampoPorChaves(rawUser, ['empresa', 'nomeEmpresa']);
@@ -1268,7 +1261,6 @@
         }
       }
 
-      // 3. Descobre o nome da pessoa (ex: "Leo"), ignorando telefones e senhas numéricas
       let nomeExibicao = '';
       const candidatosNome = [
         buscarCampoPorChaves(rawUser, ['nomeExibicao']),
@@ -1283,12 +1275,10 @@
         }
       }
 
-      // Se a senha digitada tem letras (ex: "Leo") e nenhum campo tinha nome válido, usa ela
       if (!nomeExibicao && isTextoNomeValido(senhaDigitada)) {
         nomeExibicao = String(senhaDigitada).trim();
       }
 
-      // Fallback final: procura qualquer campo textual válido no objeto que não seja cidade/chave/status
       if (!nomeExibicao) {
         const chavesIgnorar = new Set(['status', 'planoativo', 'pixchave', 'chavepix', 'pix', 'cidade', 'email', 'doc', 'cpf', 'cnpj', 'telefone', 'telefonelimpo', 'senha']);
         for (const k of Object.keys(rawUser)) {
@@ -1302,7 +1292,6 @@
         }
       }
 
-      // 4. Descobre o nome da empresa apenas se NÃO for um número de telefone
       let empresaValida = '';
       const candidatosEmpresa = [
         buscarCampoPorChaves(rawUser, ['empresaValida']),
@@ -1412,7 +1401,10 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
+    // =========================================================
+    // INICIALIZAÇÃO INSTANTÂNEA (SEM TRAVAR NA TELA DE LOGIN)
+    // =========================================================
+    window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('orcData').valueAsDate = new Date();
       gerarNumeroOrcamentoPadrao();
 
@@ -1427,37 +1419,30 @@
           return;
         }
 
+        // 1. Abre imediatamente com os dados já salvos no aparelho
+        ativarTelaApp(currentUser);
+
+        // 2. Valida assinatura na planilha em segundo plano sem bloquear a tela
         if (scriptUrl) {
-          document.getElementById('loginScreen').style.display = 'flex';
-          document.getElementById('loginStatusMsg').style.color = 'var(--muted)';
-          document.getElementById('loginStatusMsg').innerText = 'Verificando assinatura...';
-
-          try {
-            const resp = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`);
-            const data = await resp.json();
-
-            document.getElementById('loginStatusMsg').style.color = 'var(--danger)';
-            document.getElementById('loginStatusMsg').innerText = '';
-
-            if (data.status === 'success' && data.user) {
-              const userAtualizado = normalizarDadosUsuario(data.user, currentUser.idUsuarioScript);
-              if (!verificarUsuarioAtivo(userAtualizado)) {
-                travarNoLoginPorFaltaDePagamento(userAtualizado.nomeExibicao);
-                return;
+          fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`)
+            .then(resp => resp.json())
+            .then(data => {
+              if (data.status === 'success' && data.user) {
+                const userAtualizado = normalizarDadosUsuario(data.user, currentUser.idUsuarioScript);
+                if (!verificarUsuarioAtivo(userAtualizado)) {
+                  travarNoLoginPorFaltaDePagamento(userAtualizado.nomeExibicao);
+                  return;
+                }
+                currentUser = userAtualizado;
+                localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+                document.getElementById('badgeChavePixAtiva').innerText = currentUser.pixChave
+                  ? `Chave: ${currentUser.pixChave}`
+                  : 'Sem chave PIX na planilha';
+              } else {
+                travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
               }
-              currentUser = userAtualizado;
-              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-              ativarTelaApp(currentUser);
-            } else {
-              travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
-            }
-          } catch (err) {
-            document.getElementById('loginStatusMsg').style.color = 'var(--danger)';
-            document.getElementById('loginStatusMsg').innerText = '';
-            ativarTelaApp(currentUser);
-          }
-        } else {
-          ativarTelaApp(currentUser);
+            })
+            .catch(() => {});
         }
       } else {
         document.getElementById('loginScreen').style.display = 'flex';
@@ -1608,10 +1593,10 @@
       }
 
       btn.disabled = true;
-      btn.innerText = 'Verificando...';
+      btn.innerText = 'Entrando...';
       if (btnRecheck) {
         btnRecheck.disabled = true;
-        btnRecheck.innerText = 'Consultando planilha...';
+        btnRecheck.innerText = 'Consultando...';
       }
 
       try {
@@ -1647,7 +1632,7 @@
       }
     }
 
-    async function ativarTelaApp(user) {
+    function ativarTelaApp(user) {
       const u = normalizarDadosUsuario(user);
       if (!verificarUsuarioAtivo(u)) {
         travarNoLoginPorFaltaDePagamento(u ? u.nomeExibicao : '');
@@ -1655,7 +1640,6 @@
       }
       currentUser = u;
 
-      // Vincula o ID do usuário no OneSignal para notificações direcionadas
       if (u.idUsuarioScript) {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
@@ -1671,7 +1655,6 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
 
-      // Canto superior esquerdo: prioriza empresa válida ou o nome real ("Leo"), jamais o telefone
       const tituloCantoSuperior = u.empresaValida || u.nomeExibicao || 'Painel';
       document.getElementById('uiEmpresaNome').innerText = tituloCantoSuperior;
 
@@ -1685,14 +1668,16 @@
       renderizarItens();
       atualizarBadgeContador();
 
+      // Sincroniza histórico da planilha em segundo plano sem travar a interface
       if (scriptUrl && u.idUsuarioScript) {
-        try {
-          const resp = await fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}`);
-          const data = await resp.json();
-          if (data.status === 'success' && Array.isArray(data.orcamentos)) {
-            salvarOrcamentosLocaisUsuario(data.orcamentos);
-          }
-        } catch (e) {}
+        fetch(`${scriptUrl}?action=listarOrcamentos&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}`)
+          .then(resp => resp.json())
+          .then(data => {
+            if (data.status === 'success' && Array.isArray(data.orcamentos)) {
+              salvarOrcamentosLocaisUsuario(data.orcamentos);
+            }
+          })
+          .catch(() => {});
       }
     }
 
@@ -1902,9 +1887,9 @@
     }
 
     // =========================================================
-    // GERAR ORÇAMENTO PDF + SALVAR (REVALIDA STATUS ANTES DE GERAR)
+    // GERAR ORÇAMENTO PDF INSTANTÂNEO + SALVAR EM SEGUNDO PLANO
     // =========================================================
-    async function gerarOrcamentoCompleto() {
+    function gerarOrcamentoCompleto() {
       if (!verificarUsuarioAtivo(currentUser)) {
         travarNoLoginPorFaltaDePagamento();
         return;
@@ -1917,28 +1902,6 @@
         alert('Informe o nome do cliente que vai receber o serviço.');
         document.getElementById('clienteNome').focus();
         return;
-      }
-
-      const btn = document.getElementById('btnGerarFinal');
-      btn.disabled = true;
-      btn.innerText = 'Verificando e salvando...';
-
-      if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
-        try {
-          const respSync = await fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}`);
-          const dataSync = await respSync.json();
-          if (dataSync.status === 'success' && dataSync.user) {
-            const userAtualizado = normalizarDadosUsuario(dataSync.user, currentUser.idUsuarioScript);
-            if (!verificarUsuarioAtivo(userAtualizado)) {
-              btn.disabled = false;
-              btn.innerText = 'Gerar PDF e Salvar';
-              travarNoLoginPorFaltaDePagamento(userAtualizado.nomeExibicao);
-              return;
-            }
-            currentUser = userAtualizado;
-            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-          }
-        } catch (errSync) {}
       }
 
       const numOrc = document.getElementById('orcNumero').value.trim();
@@ -1964,6 +1927,7 @@
         observacoes: obs
       };
 
+      // 1. Salva localmente e abre o PDF IMEDIATAMENTE (sem delay de rede)
       const listaLocal = obterOrcamentosLocaisUsuario();
       const idxExistente = listaLocal.findIndex(o => o.numeroOrcamento === numOrc);
       if (idxExistente >= 0) {
@@ -1973,35 +1937,29 @@
         listaLocal.unshift(registroOrcamento);
       }
       salvarOrcamentosLocaisUsuario(listaLocal);
-
-      if (scriptUrl) {
-        try {
-          const respSave = await fetch(scriptUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'adicionarOrcamento',
-              primeiroNome: currentUser.idUsuarioScript,
-              ...registroOrcamento
-            })
-          });
-          const resData = await respSave.json();
-          if (resData.status === 'blocked') {
-            btn.disabled = false;
-            btn.innerText = 'Gerar PDF e Salvar';
-            travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
-            return;
-          }
-          if (resData.status === 'success' && resData.id) {
-            registroOrcamento.id = resData.id;
-            salvarOrcamentosLocaisUsuario(listaLocal);
-          }
-        } catch (e) {}
-      }
-
       preencherDocumentoVisualizacao(registroOrcamento);
 
-      btn.disabled = false;
-      btn.innerText = 'Gerar PDF e Salvar';
+      // 2. Sincroniza com a planilha em segundo plano (o servidor já valida status ATIVO/OFF)
+      if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
+        fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'adicionarOrcamento',
+            primeiroNome: currentUser.idUsuarioScript,
+            ...registroOrcamento
+          })
+        })
+          .then(r => r.json())
+          .then(resData => {
+            if (resData.status === 'blocked') {
+              travarNoLoginPorFaltaDePagamento(currentUser.nomeExibicao);
+            } else if (resData.status === 'success' && resData.id) {
+              registroOrcamento.id = resData.id;
+              salvarOrcamentosLocaisUsuario(listaLocal);
+            }
+          })
+          .catch(() => {});
+      }
     }
 
     function voltarParaEditor() {
@@ -2121,7 +2079,7 @@
       fecharHistorico();
     }
 
-    async function excluirOrcamentoCompleto(idRegistro, numeroOrc) {
+    function excluirOrcamentoCompleto(idRegistro, numeroOrc) {
       if (!verificarUsuarioAtivo(currentUser)) {
         travarNoLoginPorFaltaDePagamento();
         return;
@@ -2134,16 +2092,14 @@
       renderizarListaHistoricoUI(filtrados);
 
       if (scriptUrl && currentUser && currentUser.idUsuarioScript) {
-        try {
-          await fetch(scriptUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'removerOrcamento',
-              primeiroNome: currentUser.idUsuarioScript,
-              id: idRegistro
-            })
-          });
-        } catch (e) {}
+        fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'removerOrcamento',
+            primeiroNome: currentUser.idUsuarioScript,
+            id: idRegistro
+          })
+        }).catch(() => {});
       }
     }
   </script>
