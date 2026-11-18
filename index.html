@@ -12,6 +12,13 @@
   <title>FlowNest</title>
   <link rel="manifest" href="./manifest.json" />
 
+  <script>
+    // =========================================================================
+    // URL DO GOOGLE APPS SCRIPT (/exec) CONFIGURADA:
+    // =========================================================================
+    const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDwXktuTCRIzmsA30O-4DGZszEg6V6VB4KHmE4NqH09YHvywCJoiedHEihXPKG8xQF7g/exec";
+  </script>
+
   <!-- =========================================================
        ONESIGNAL WEB PUSH SDK v16 (CONFIGURADO PARA /flow/)
        ========================================================= -->
@@ -54,26 +61,33 @@
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
+      touch-action: pan-x pan-y;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
     }
 
-    html, body {
+    html {
       margin: 0;
       padding: 0;
-      min-height: 100vh;
+      height: 100%;
       overflow-x: hidden;
-      overscroll-behavior-y: none;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       color: var(--text);
       background: radial-gradient(circle at 15% 15%, #dbeafe 0%, transparent 45%),
                   radial-gradient(circle at 85% 80%, #e0e7ff 0%, transparent 50%),
                   linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      background-attachment: fixed;
-    }
-
-    body {
-      padding-bottom: calc(105px + env(safe-area-inset-bottom));
+      background-attachment: scroll;
+      padding-bottom: calc(110px + env(safe-area-inset-bottom));
     }
 
     .bg-orb-1, .bg-orb-2, .bg-orb-3 {
@@ -124,7 +138,7 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(255, 255, 255, 0.82);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.7);
@@ -523,17 +537,18 @@
       transform: scale(0.98);
     }
 
-    .pix-badge-fixed {
+    .pix-info-strip {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 14px;
+      padding: 10px 14px;
+      margin-top: 8px;
       border-radius: var(--radius-md);
       background: rgba(52, 199, 89, 0.12);
       border: 1px solid rgba(52, 199, 89, 0.3);
       color: #15803d;
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.82rem;
     }
 
     /* =========================================================
@@ -546,7 +561,7 @@
       right: 12px;
       max-width: 656px;
       margin: 0 auto;
-      background: rgba(255, 255, 255, 0.88);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.85);
@@ -603,6 +618,7 @@
       z-index: 120;
       padding: 16px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       align-items: center;
       justify-content: center;
     }
@@ -631,7 +647,7 @@
     }
 
     /* =========================================================
-       DOCUMENTO FINAL (PDF / IMPRESSÃO)
+       DOCUMENTO FINAL (PDF / IMPRESSÃO COMPACTA 1 FOLHA ATÉ 12 ITENS)
        ========================================================= */
     .preview-bar {
       display: none;
@@ -661,48 +677,49 @@
       background: #ffffff;
       color: #000000;
       max-width: 800px;
-      margin: 16px auto;
-      padding: 32px;
+      margin: 14px auto;
+      padding: 20px 24px;
       border-radius: 12px;
       box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1);
-      font-size: 13px;
-      line-height: 1.45;
+      font-size: 12px;
+      line-height: 1.3;
     }
 
     .doc-top {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       border-bottom: 2px solid #0f172a;
-      padding-bottom: 14px;
-      margin-bottom: 16px;
-      gap: 14px;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      gap: 12px;
     }
 
     .doc-company-left {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
     }
 
     .doc-company-logo {
-      width: 68px;
-      height: 68px;
-      border-radius: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
       object-fit: cover;
       border: 1px solid #cbd5e1;
       flex-shrink: 0;
     }
 
     .doc-top h2 {
-      margin: 0 0 4px 0;
-      font-size: 21px;
+      margin: 0 0 2px 0;
+      font-size: 18px;
+      line-height: 1.15;
       color: #0f172a;
     }
 
     .doc-top p {
-      margin: 2px 0;
-      font-size: 12px;
+      margin: 1px 0;
+      font-size: 11px;
       color: #334155;
     }
 
@@ -713,50 +730,59 @@
 
     .doc-badge-orc h3 {
       margin: 0;
-      font-size: 18px;
+      font-size: 16px;
       color: #0f172a;
     }
 
     .doc-block {
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
     .doc-block-title {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       text-transform: uppercase;
       background: #f1f5f9;
-      padding: 6px 10px;
+      padding: 4px 8px;
       border-left: 3.5px solid #0f172a;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #0f172a;
     }
 
     .doc-client-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 16px;
-      font-size: 12.5px;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 3px 14px;
+      font-size: 11.5px;
     }
 
+    /* TABELA COMPACTA RENTE ÀS LINHAS */
     .doc-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     .doc-table th {
       background: #0f172a;
       color: #fff;
-      padding: 8px;
-      font-size: 11.5px;
+      padding: 4px 6px;
+      font-size: 10.5px;
       text-align: left;
+      line-height: 1.2;
     }
 
     .doc-table td {
-      padding: 8px;
+      padding: 3px 6px;
       border-bottom: 1px solid #cbd5e1;
-      font-size: 12px;
+      font-size: 11px;
+      line-height: 1.2;
+      vertical-align: middle;
+    }
+
+    .doc-table tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .text-right { text-align: right !important; }
@@ -768,61 +794,102 @@
       align-items: center;
       background: #f8fafc;
       border: 1px solid #cbd5e1;
-      padding: 10px 14px;
-      border-radius: 6px;
-      margin-top: 10px;
+      padding: 6px 10px;
+      border-radius: 5px;
+      margin-top: 6px;
       font-weight: 700;
+      font-size: 11.5px;
     }
 
     .doc-pix-card {
       display: flex;
-      gap: 18px;
+      gap: 14px;
       align-items: center;
       border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      padding: 14px;
+      border-radius: 6px;
+      padding: 8px 12px;
       background: #fafafa;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .doc-pix-card img {
-      width: 135px;
-      height: 135px;
+      width: 102px;
+      height: 102px;
       object-fit: contain;
       background: #fff;
       border: 1px solid #e2e8f0;
-      padding: 4px;
-      border-radius: 6px;
+      padding: 3px;
+      border-radius: 5px;
       flex-shrink: 0;
     }
 
     .doc-paper-signatures {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      margin-top: 48px;
+      gap: 28px;
+      margin-top: 26px;
       text-align: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .paper-sig-line {
       border-top: 1px solid #0f172a;
-      padding-top: 6px;
-      font-size: 11.5px;
+      padding-top: 4px;
+      font-size: 10.5px;
       color: #1e293b;
+      line-height: 1.25;
     }
 
     .doc-footer-brand {
-      margin-top: 26px;
-      padding-top: 10px;
+      margin-top: 14px;
+      padding-top: 6px;
       border-top: 1px solid #e2e8f0;
       text-align: center;
-      font-size: 11px;
+      font-size: 10px;
       color: #64748b;
     }
 
+    /* AJUSTE FINO AUTOMÁTICO PARA CABER 100% EM 1 FOLHA A4 QUANDO <= 12 ITENS */
+    #printDocument.single-page-fit .doc-top {
+      padding-bottom: 6px;
+      margin-bottom: 7px;
+    }
+    #printDocument.single-page-fit .doc-block {
+      margin-bottom: 7px;
+    }
+    #printDocument.single-page-fit .doc-table th {
+      padding: 3.5px 6px;
+    }
+    #printDocument.single-page-fit .doc-table td {
+      padding: 2.5px 6px;
+      font-size: 10.8px;
+    }
+    #printDocument.single-page-fit .doc-pix-card {
+      padding: 6px 10px;
+    }
+    #printDocument.single-page-fit .doc-pix-card img {
+      width: 92px;
+      height: 92px;
+    }
+    #printDocument.single-page-fit .doc-paper-signatures {
+      margin-top: 20px;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 8mm 10mm;
+    }
+
     @media print {
-      body {
+      html, body {
         background: #fff !important;
         padding: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+        height: auto !important;
+        overflow: visible !important;
       }
       .bg-orb-1, .bg-orb-2, .bg-orb-3, #loginScreen, #appScreen, .glass-dock, .preview-bar, .modal-backdrop {
         display: none !important;
@@ -832,7 +899,12 @@
         margin: 0 !important;
         padding: 0 !important;
         box-shadow: none !important;
+        border-radius: 0 !important;
         max-width: 100% !important;
+        width: 100% !important;
+      }
+      .doc-table thead {
+        display: table-header-group;
       }
     }
   </style>
@@ -989,9 +1061,15 @@
           <div class="section-label">Pagamento & Observações</div>
 
           <div class="form-group">
-            <label>Forma de Pagamento</label>
-            <div class="pix-badge-fixed">
-              <span>💠 Pagamento via PIX</span>
+            <label for="formaPagamentoSelect">Forma de Pagamento</label>
+            <select id="formaPagamentoSelect" onchange="atualizarVisualFormaPagamento()">
+              <option value="PIX" selected>PIX</option>
+              <option value="A combinar">A combinar</option>
+              <option value="Cartão">Cartão</option>
+              <option value="Dinheiro">Dinheiro</option>
+            </select>
+            <div id="pixInfoEditorStrip" class="pix-info-strip">
+              <span>💠 QR Code PIX ativo no PDF</span>
               <span id="badgeChavePixAtiva" style="font-size:0.74rem; opacity:0.9;">Carregando PIX...</span>
             </div>
           </div>
@@ -1052,7 +1130,7 @@
       </div>
       <div class="doc-badge-orc">
         <h3>ORÇAMENTO</h3>
-        <p style="font-weight:700; color:#007aff; font-size:13px;" id="docOrcNumero"></p>
+        <p style="font-weight:700; color:#007aff; font-size:12.5px;" id="docOrcNumero"></p>
         <p>Emissão: <strong id="docOrcData"></strong></p>
       </div>
     </div>
@@ -1063,54 +1141,54 @@
         <div><strong>Cliente:</strong> <span id="docCliNome"></span></div>
         <div><strong>CPF/CNPJ:</strong> <span id="docCliCpf"></span></div>
         <div><strong>Telefone:</strong> <span id="docCliTel"></span></div>
-        <div><strong>Pagamento:</strong> PIX</div>
+        <div><strong>Pagamento:</strong> <span id="docFormaPagamento">PIX</span></div>
       </div>
-      <div style="margin-top:6px; font-size:12.5px;">
+      <div style="margin-top:3px; font-size:11.5px;">
         <strong>Endereço do Serviço:</strong> <span id="docCliEnd"></span>
       </div>
     </div>
 
     <div class="doc-block">
       <div class="doc-block-title">Discriminação dos Serviços & Materiais</div>
-      <p id="docDiscriminacao" style="margin:4px 0 10px 0; font-size:12.5px;"></p>
+      <p id="docDiscriminacao" style="margin:2px 0 6px 0; font-size:11.5px;"></p>
 
       <table class="doc-table">
         <thead>
           <tr>
             <th>Material / Serviço</th>
-            <th class="text-center" style="width:65px;">Qtd</th>
-            <th class="text-center" style="width:55px;">Un.</th>
-            <th class="text-right" style="width:100px;">Valor Unit.</th>
-            <th class="text-right" style="width:105px;">Total</th>
+            <th class="text-center" style="width:58px;">Qtd</th>
+            <th class="text-center" style="width:48px;">Un.</th>
+            <th class="text-right" style="width:92px;">Valor Unit.</th>
+            <th class="text-right" style="width:98px;">Total</th>
           </tr>
         </thead>
         <tbody id="docTabelaCorpo"></tbody>
       </table>
 
       <div class="doc-total-strip">
-        <span>FORMA DE PAGAMENTO: PIX</span>
-        <span style="font-size:15px;">VALOR TOTAL: <span id="docTotalValor"></span></span>
+        <span>FORMA DE PAGAMENTO: <span id="docTotalFormaPgto">PIX</span></span>
+        <span style="font-size:13.5px;">VALOR TOTAL: <span id="docTotalValor"></span></span>
       </div>
     </div>
 
-    <!-- Bloco PIX -->
+    <!-- Bloco PIX (Aparece SOMENTE se Forma de Pagamento == PIX) -->
     <div class="doc-block" id="docBlocoPix">
       <div class="doc-block-title">Pagamento via PIX</div>
       <div class="doc-pix-card">
         <div id="docQrWrapper">
           <img id="docQrImagem" src="" alt="QR Code PIX" />
         </div>
-        <div style="flex:1; font-size:14px; line-height:1.7;">
+        <div style="flex:1; font-size:12.5px; line-height:1.5;">
           <p style="margin:0; font-weight:700; color:#0f172a;">Pague com PIX: <span id="docPixTotal"></span></p>
-          <p style="margin:0; font-weight:600; color:#1e293b;">Chave PIX: <span id="docPixChave"></span></p>
+          <p style="margin:2px 0 0 0; font-weight:600; color:#1e293b; word-break:break-all;">Chave PIX: <span id="docPixChave"></span></p>
         </div>
       </div>
     </div>
 
-    <!-- Bloco Observações -->
+    <!-- Bloco Observações (Texto em NEGRITO) -->
     <div class="doc-block" id="docBlocoObs" style="display:none;">
       <div class="doc-block-title">Observações</div>
-      <p id="docObsTexto" style="margin:4px 0; font-size:12.5px;"></p>
+      <p style="margin:2px 0; font-size:11.5px;"><strong id="docObsTexto"></strong></p>
     </div>
 
     <!-- Assinaturas Físicas no Documento Impresso -->
@@ -1172,20 +1250,11 @@
 
   <script>
     // =========================================================
-    // BLOQUEIO DE DUPLO ZOOM (DOUBLE TAP) NO CELULAR
+    // BLOQUEIO APENAS DE PINCH-ZOOM NO SAFARI/IOS SEM TRAVAR ROLAGEM
     // =========================================================
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
-
-    document.addEventListener('dblclick', function (event) {
+    document.addEventListener('gesturestart', function (event) {
       event.preventDefault();
-    }, { passive: false });
+    });
 
     // =========================================================
     // ESTADO GLOBAL E NORMALIZAÇÃO
@@ -1193,7 +1262,14 @@
     const STORAGE_KEY_URL = 'flownest_apps_script_url';
     const STORAGE_KEY_USER = 'flownest_logged_user';
 
-    let scriptUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
+    let scriptUrl = (DEFAULT_APPS_SCRIPT_URL && DEFAULT_APPS_SCRIPT_URL.trim())
+      ? DEFAULT_APPS_SCRIPT_URL.trim()
+      : (localStorage.getItem(STORAGE_KEY_URL) || '');
+
+    if (DEFAULT_APPS_SCRIPT_URL && DEFAULT_APPS_SCRIPT_URL.trim()) {
+      localStorage.setItem(STORAGE_KEY_URL, DEFAULT_APPS_SCRIPT_URL.trim());
+    }
+
     let currentUser = JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || 'null');
     let ultimaSenhaTentada = '';
 
@@ -1231,7 +1307,7 @@
         doc: String(rawUser.doc || '').trim(),
         email: String(rawUser.email || '').trim(),
         cidade: String(rawUser.cidade || '').trim(),
-        pixChave: String(rawUser.pixChave || '').trim(),
+        pixChave: String(rawUser.pixChave || rawUser.chavePix || '').trim(),
         status: planoAtivo ? 'ATIVO' : 'OFF',
         planoAtivo: planoAtivo
       };
@@ -1297,6 +1373,12 @@
       }
     }
 
+    function atualizarVisualFormaPagamento() {
+      const forma = document.getElementById('formaPagamentoSelect').value;
+      const strip = document.getElementById('pixInfoEditorStrip');
+      strip.style.display = (forma === 'PIX') ? 'flex' : 'none';
+    }
+
     function aplicarDadosPerfilNaTela(u) {
       const tituloCantoSuperior = u.empresaValida || u.nomeExibicao || u.primeiroNome || 'Painel';
       document.getElementById('uiEmpresaNome').innerText = tituloCantoSuperior;
@@ -1310,6 +1392,7 @@
       document.getElementById('badgeChavePixAtiva').innerText = u.pixChave
         ? `Chave: ${u.pixChave}`
         : 'Sem chave PIX na planilha';
+      atualizarVisualFormaPagamento();
     }
 
     // =========================================================
@@ -1327,10 +1410,8 @@
           return;
         }
 
-        // Abre o painel na hora (0ms)
         ativarTelaApp(currentUser);
 
-        // ETAPA 1 em segundo plano: verifica APENAS PrimeiroNome + Status
         if (scriptUrl) {
           fetch(`${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(currentUser.idUsuarioScript)}&_t=${Date.now()}`)
             .then(r => r.json())
@@ -1369,13 +1450,15 @@
       document.getElementById('clienteTelefone').value = '';
       document.getElementById('clienteEndereco').value = '';
       document.getElementById('discriminacaoServico').value = '';
+      document.getElementById('formaPagamentoSelect').value = 'PIX';
+      atualizarVisualFormaPagamento();
       ocultarObservacao();
       itensOrcamento = [{ desc: '', qtd: '', un: 'un', unit: '' }];
       renderizarItens();
     }
 
     // =========================================================
-    // GERADOR OFICIAL DE PAYLOAD PIX PARA O QR CODE (EMV + CRC16)
+    // GERADOR OFICIAL DE PAYLOAD PIX (EMV BACEN + CRC16)
     // =========================================================
     function formatarCampoEMV(id, valor) {
       const len = String(valor.length).padStart(2, '0');
@@ -1387,9 +1470,39 @@
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-zA-Z0-9 ]/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase()
         .substring(0, maxLen) || 'BRASIL';
+    }
+
+    function normalizarChavePixParaEMV(chaveRaw) {
+      let chave = String(chaveRaw || '').trim();
+      if (!chave) return '';
+
+      if (chave.includes('@')) {
+        return chave.toLowerCase();
+      }
+
+      if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(chave)) {
+        return chave.toLowerCase();
+      }
+
+      if (chave.startsWith('+')) {
+        return '+' + chave.replace(/\D/g, '');
+      }
+
+      const apenasDigitos = chave.replace(/\D/g, '');
+
+      if (/[\(\)\s]/.test(chave) && (apenasDigitos.length === 10 || apenasDigitos.length === 11)) {
+        return '+55' + apenasDigitos;
+      }
+
+      if (apenasDigitos.length === 11 || apenasDigitos.length === 14) {
+        return apenasDigitos;
+      }
+
+      return chave;
     }
 
     function calcularCRC16(payload) {
@@ -1408,15 +1521,15 @@
     }
 
     function gerarPayloadPixBRCode(chavePix, nomeRecebedor, cidadeRecebedor, valorNumerico, txid) {
-      const chaveLimpa = String(chavePix || '').trim();
-      if (!chaveLimpa) return '';
+      const chaveEMV = normalizarChavePixParaEMV(chavePix);
+      if (!chaveEMV) return '';
 
       const nomeFmt = limparTextoSemAcento(nomeRecebedor || 'PRESTADOR', 25);
       const cidadeFmt = limparTextoSemAcento(cidadeRecebedor || 'BRASIL', 15);
       const txidFmt = String(txid || '***').replace(/[^a-zA-Z0-9]/g, '').substring(0, 25) || '***';
 
       const gui = formatarCampoEMV('00', 'br.gov.bcb.pix');
-      const key = formatarCampoEMV('01', chaveLimpa);
+      const key = formatarCampoEMV('01', chaveEMV);
       const merchantAccountInfo = formatarCampoEMV('26', gui + key);
 
       let payload = '';
@@ -1445,7 +1558,7 @@
     // CONFIGURAÇÃO DA ENGRENAGEM (URL APPS SCRIPT)
     // =========================================================
     function abrirModalScript() {
-      document.getElementById('inputScriptUrl').value = localStorage.getItem(STORAGE_KEY_URL) || '';
+      document.getElementById('inputScriptUrl').value = scriptUrl || localStorage.getItem(STORAGE_KEY_URL) || '';
       document.getElementById('modalScript').style.display = 'flex';
     }
 
@@ -1484,7 +1597,7 @@
       msgEl.innerText = '';
 
       if (!scriptUrl) {
-        msgEl.innerText = 'Configure a URL do sistema na engrenagem (⚙️) acima.';
+        msgEl.innerText = 'Configure a URL do sistema no início do código HTML ou na engrenagem (⚙️).';
         return;
       }
 
@@ -1502,7 +1615,6 @@
       }
 
       try {
-        // Chama action=login (lê SOMENTE PrimeiroNome + Status na planilha)
         const urlRequisicao = `${scriptUrl}?action=login&primeiroNome=${encodeURIComponent(senhaDigitada)}&_t=${Date.now()}`;
         const resp = await fetch(urlRequisicao);
         const data = await resp.json();
@@ -1510,13 +1622,11 @@
         if (data.status === 'success' && data.user) {
           const authUser = normalizarDadosUsuario(data.user, senhaDigitada);
 
-          // Se status = OFF, trava no alerta vermelho (nunca diz "usuário não existe")
           if (!verificarUsuarioAtivo(authUser)) {
             travarNoLoginPorFaltaDePagamento(authUser.primeiroNome);
             return;
           }
 
-          // Status = ATIVO -> Libera o app IMEDIATAMENTE
           alertBox.style.display = 'none';
           currentUser = authUser;
           localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
@@ -1526,7 +1636,7 @@
           msgEl.innerText = 'Senha incorreta ou acesso não autorizado.';
         }
       } catch (err) {
-        msgEl.innerText = 'Erro de conexão com o servidor. Verifique a URL na engrenagem.';
+        msgEl.innerText = 'Erro de conexão com o servidor. Verifique a URL configurada.';
       } finally {
         btn.disabled = false;
         btn.innerText = 'Entrar';
@@ -1548,7 +1658,6 @@
       }
       currentUser = u;
 
-      // Abre a tela do app imediatamente
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appScreen').style.display = 'block';
 
@@ -1556,7 +1665,6 @@
       renderizarItens();
       atualizarBadgeContador();
 
-      // Registra push OneSignal sem travar
       if (u.idUsuarioScript) {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
@@ -1569,7 +1677,6 @@
         });
       }
 
-      // Busca o restante dos dados (Empresa, PIX, CPF, Cidade) + Orçamentos em segundo plano
       if (scriptUrl && u.idUsuarioScript) {
         fetch(`${scriptUrl}?action=perfilCompleto&primeiroNome=${encodeURIComponent(u.idUsuarioScript)}&_t=${Date.now()}`)
           .then(resp => resp.json())
@@ -1731,6 +1838,7 @@
     function preencherDocumentoVisualizacao(dadosOrc) {
       const nomeEmpresaDoc = currentUser.empresaValida || currentUser.nomeExibicao || 'Empresa';
       const nomeResponsavelDoc = currentUser.nomeExibicao || nomeEmpresaDoc;
+      const formaPagamentoEscolhida = (dadosOrc.formaPagamento || 'PIX').trim();
 
       document.getElementById('docEmpresaNome').innerText = nomeEmpresaDoc;
       document.getElementById('docPrestadorNome').innerText = nomeResponsavelDoc;
@@ -1742,15 +1850,20 @@
       document.getElementById('docOrcNumero').innerText = `N° ${dadosOrc.numeroOrcamento}`;
       document.getElementById('docOrcData').innerText = dadosOrc.dataEmissao;
 
-      document.getElementById('docCliNome').innerText = dadosOrc.clienteNome;
+      document.getElementById('docCliNome').innerText = dadosOrc.clienteNome || 'Não informado';
       document.getElementById('docCliCpf').innerText = dadosOrc.clienteCpf || 'Não informado';
       document.getElementById('docCliTel').innerText = dadosOrc.clienteTelefone || 'Não informado';
       document.getElementById('docCliEnd').innerText = dadosOrc.clienteEndereco || 'Não informado';
+
+      document.getElementById('docFormaPagamento').innerText = formaPagamentoEscolhida;
+      document.getElementById('docTotalFormaPgto').innerText = formaPagamentoEscolhida.toUpperCase();
       document.getElementById('docDiscriminacao').innerText = dadosOrc.discriminacao || 'Execução de serviços conforme itens abaixo:';
 
+      const listaItens = dadosOrc.itens || [];
       const tbody = document.getElementById('docTabelaCorpo');
       tbody.innerHTML = '';
-      (dadosOrc.itens || []).forEach(it => {
+
+      listaItens.forEach(it => {
         const q = parseFloat(it.qtd) || 0;
         const u = parseFloat(it.unit) || 0;
         const sub = q * u;
@@ -1765,14 +1878,23 @@
         tbody.appendChild(tr);
       });
 
+      const printDocEl = document.getElementById('printDocument');
+      if (listaItens.length <= 12) {
+        printDocEl.classList.add('single-page-fit');
+      } else {
+        printDocEl.classList.remove('single-page-fit');
+      }
+
       const totalStr = formatarMoeda(dadosOrc.valorTotal);
       document.getElementById('docTotalValor').innerText = totalStr;
 
-      const chavePixPlanilha = (currentUser.pixChave || '').trim();
-      document.getElementById('docPixTotal').innerText = totalStr;
-      document.getElementById('docPixChave').innerText = chavePixPlanilha || 'Chave não cadastrada';
+      const chavePixPlanilha = String(currentUser.pixChave || '').trim();
+      const blocoPixEl = document.getElementById('docBlocoPix');
 
-      if (chavePixPlanilha) {
+      if (formaPagamentoEscolhida.toUpperCase() === 'PIX' && chavePixPlanilha) {
+        document.getElementById('docPixTotal').innerText = totalStr;
+        document.getElementById('docPixChave').innerText = chavePixPlanilha;
+
         const payloadPixOficial = gerarPayloadPixBRCode(
           chavePixPlanilha,
           nomeEmpresaDoc,
@@ -1780,10 +1902,10 @@
           dadosOrc.valorTotal,
           dadosOrc.numeroOrcamento
         );
-        document.getElementById('docQrImagem').src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=4&data=${encodeURIComponent(payloadPixOficial)}`;
-        document.getElementById('docBlocoPix').style.display = 'block';
+        document.getElementById('docQrImagem').src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&ecc=M&margin=2&data=${encodeURIComponent(payloadPixOficial)}`;
+        blocoPixEl.style.display = 'block';
       } else {
-        document.getElementById('docBlocoPix').style.display = 'none';
+        blocoPixEl.style.display = 'none';
       }
 
       if (dadosOrc.observacoes) {
@@ -1800,7 +1922,7 @@
 
       document.getElementById('appScreen').style.display = 'none';
       document.getElementById('previewBar').style.display = 'flex';
-      document.getElementById('printDocument').style.display = 'block';
+      printDocEl.style.display = 'block';
       window.scrollTo(0, 0);
     }
 
@@ -1828,6 +1950,7 @@
       const cliCpf = document.getElementById('clienteCpf').value.trim();
       const cliTel = document.getElementById('clienteTelefone').value.trim();
       const discriminacao = document.getElementById('discriminacaoServico').value.trim();
+      const formaPagamento = document.getElementById('formaPagamentoSelect').value;
       const obs = document.getElementById('observacoesTexto').value.trim();
       const totalNum = calcularTotalNumerico();
 
@@ -1840,6 +1963,7 @@
         clienteTelefone: cliTel,
         clienteEndereco: cliEnd,
         discriminacao: discriminacao,
+        formaPagamento: formaPagamento,
         itens: JSON.parse(JSON.stringify(itensOrcamento)),
         valorTotal: totalNum,
         observacoes: obs
@@ -1979,6 +2103,8 @@
       document.getElementById('clienteTelefone').value = orc.clienteTelefone || '';
       document.getElementById('clienteEndereco').value = orc.clienteEndereco || '';
       document.getElementById('discriminacaoServico').value = orc.discriminacao || '';
+      document.getElementById('formaPagamentoSelect').value = orc.formaPagamento || 'PIX';
+      atualizarVisualFormaPagamento();
 
       if (orc.observacoes) {
         mostrarObservacao();
