@@ -814,8 +814,8 @@
     }
 
     .doc-pix-card img {
-      width: 102px;
-      height: 102px;
+      width: 100px;
+      height: 100px;
       object-fit: contain;
       background: #fff;
       border: 1px solid #e2e8f0;
@@ -824,11 +824,13 @@
       flex-shrink: 0;
     }
 
+    /* ASSINATURAS COM ESPAÇO CONFORTÁVEL MAIS EMBAIXO */
     .doc-paper-signatures {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 28px;
-      margin-top: 26px;
+      gap: 34px;
+      margin-top: 46px;
+      padding-top: 10px;
       text-align: center;
       page-break-inside: avoid;
       break-inside: avoid;
@@ -836,14 +838,14 @@
 
     .paper-sig-line {
       border-top: 1px solid #0f172a;
-      padding-top: 4px;
+      padding-top: 5px;
       font-size: 10.5px;
       color: #1e293b;
       line-height: 1.25;
     }
 
     .doc-footer-brand {
-      margin-top: 14px;
+      margin-top: 16px;
       padding-top: 6px;
       border-top: 1px solid #e2e8f0;
       text-align: center;
@@ -870,16 +872,20 @@
       padding: 6px 10px;
     }
     #printDocument.single-page-fit .doc-pix-card img {
-      width: 92px;
-      height: 92px;
+      width: 88px;
+      height: 88px;
     }
     #printDocument.single-page-fit .doc-paper-signatures {
-      margin-top: 20px;
+      margin-top: 38px;
+      padding-top: 8px;
     }
 
+    /* =========================================================
+       REMOVE CABEÇALHOS E RODAPÉS DO NAVEGADOR (LINK DO GITHUB/URL)
+       ========================================================= */
     @page {
       size: A4 portrait;
-      margin: 8mm 10mm;
+      margin: 0mm;
     }
 
     @media print {
@@ -897,7 +903,7 @@
       #printDocument {
         display: block !important;
         margin: 0 !important;
-        padding: 0 !important;
+        padding: 9mm 11mm !important;
         box-shadow: none !important;
         border-radius: 0 !important;
         max-width: 100% !important;
